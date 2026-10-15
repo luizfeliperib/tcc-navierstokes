@@ -25,6 +25,10 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+addopts = '-m "not extended"'
+markers = [
+    "extended: verificacoes numericas e parametrizacoes adicionais",
+]
 
 [tool.ruff]
 line-length = 88
