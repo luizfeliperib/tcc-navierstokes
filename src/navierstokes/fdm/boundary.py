@@ -4,6 +4,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from navierstokes.config import SimulationConfig
+from navierstokes.fdm.grid import CartesianGrid
 
 
 def apply_velocity_boundary_conditions(
@@ -33,3 +34,36 @@ def apply_velocity_boundary_conditions(
     v[-1, :] = 0.0
     v[:, 0] = 0.0
     v[:, -1] = 0.0
+
+
+def interpolate_impermeable_faces(
+    u: NDArray[np.float64],
+    v: NDArray[np.float64],
+    grid: "CartesianGrid",
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+    """
+    Interpola velocidades centrais para faces internas.
+
+    Nas faces externas, impõe fluxo normal nulo.
+    Aplicável a domínios retangulares fechados.
+    """
+
+    expected = grid.scalar_shape
+
+    if u.shape != expected or v.shape != expected:
+        raise ValueError(
+            f"u e v devem possuir shape {expected}"
+        )
+
+    u_faces = grid.zeros_u_faces()
+    v_faces = grid.zeros_v_faces()
+
+    u_faces[:, 1:-1] = 0.5 * (
+        u[:, :-1] + u[:, 1:]
+    )
+
+    v_faces[1:-1, :] = 0.5 * (
+        v[:-1, :] + v[1:, :]
+    )
+
+    return u_faces, v_faces
