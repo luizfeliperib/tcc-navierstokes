@@ -471,3 +471,101 @@ def test_solver_does_not_modify_input_arrays():
     np.testing.assert_array_equal(
         initial, initial_before
     )
+
+
+# ============================================================
+# 9. VALIDACOES ADICIONAIS DO FDM-03
+# ============================================================
+
+
+@pytest.mark.parametrize(
+    "invalid_iterations",
+    [
+        pytest.param(True, id="bool-true"),
+        pytest.param(
+            False,
+            marks=pytest.mark.extended,
+            id="bool-false",
+        ),
+        pytest.param(
+            np.bool_(True),
+            marks=pytest.mark.extended,
+            id="numpy-bool",
+        ),
+    ],
+)
+def test_rejects_boolean_max_iterations(invalid_iterations):
+    grid = make_test_grid(5, 5, 1.0, 1.0)
+    coefficients = assemble_poisson_coefficients(grid)
+
+    with pytest.raises(ValueError, match="max_iterations"):
+        solve_poisson_gauss_seidel(
+            np.zeros(grid.scalar_shape),
+            coefficients,
+            max_iterations=invalid_iterations,
+        )
+
+
+def test_rejects_nonfinite_initial_residual():
+    grid = make_test_grid(5, 5, 1.0, 1.0)
+    coefficients = assemble_poisson_coefficients(grid)
+
+    # Valores finitos cuja norma euclidiana transborda.
+    rhs = np.zeros(grid.scalar_shape)
+    rhs[0, 0] = 1e200
+    rhs[0, 1] = -1e200
+
+    with pytest.raises(
+        FloatingPointError,
+        match="Residuo inicial nao finito",
+    ):
+        solve_poisson_gauss_seidel(
+            rhs,
+            coefficients,
+        )
+
+
+def test_approximately_compatible_rhs_has_residual_floor():
+    """Uma media residual nao nula limita a convergencia."""
+    grid = make_test_grid(5, 5, 1.0, 1.0)
+    coefficients, _, compatible_rhs = make_known_problem(grid)
+
+    offset = 1e-7
+    rhs = compatible_rhs + offset
+
+    result = solve_poisson_gauss_seidel(
+        rhs,
+        coefficients,
+        tolerance=1e-9,
+        max_iterations=500,
+        compatibility_tolerance=1e-5,
+    )
+
+    # Como A(phi) possui media zero, o residuo nao pode
+    # ter RMS inferior ao modulo da media de rhs.
+    assert not result.converged
+    assert result.iterations == 500
+    assert result.residual >= abs(np.mean(rhs)) - 1e-12
+    assert result.residual > 1e-9
+
+
+@pytest.mark.extended
+def test_approximately_compatible_rhs_converges_if_tolerance_allows():
+    """Convergencia e possivel acima do piso de compatibilidade."""
+    grid = make_test_grid(5, 5, 1.0, 1.0)
+    coefficients, _, compatible_rhs = make_known_problem(grid)
+
+    rhs = compatible_rhs + 1e-7
+
+    result = solve_poisson_gauss_seidel(
+        rhs,
+        coefficients,
+        tolerance=1e-6,
+        max_iterations=5_000,
+        compatibility_tolerance=1e-5,
+    )
+
+    assert result.converged
+    assert result.residual <= 1e-6
+    assert abs(np.mean(result.phi)) < 1e-12
+

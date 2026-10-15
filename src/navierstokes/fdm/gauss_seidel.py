@@ -38,7 +38,6 @@ def solve_poisson_gauss_seidel(
     """
 
     shape = coefficients.center.shape
-
     rhs = np.asarray(rhs, dtype=np.float64)
 
     if rhs.shape != shape:
@@ -50,7 +49,11 @@ def solve_poisson_gauss_seidel(
     if not np.isfinite(tolerance) or tolerance <= 0:
         raise ValueError("tolerance deve ser finita e positiva")
 
-    if not isinstance(max_iterations, int) or max_iterations < 1:
+    if (
+        isinstance(max_iterations, (bool, np.bool_))
+        or not isinstance(max_iterations, (int, np.integer))
+        or max_iterations < 1
+    ):
         raise ValueError("max_iterations deve ser inteiro positivo")
 
     if (
@@ -61,9 +64,8 @@ def solve_poisson_gauss_seidel(
             "compatibility_tolerance deve ser finita e nao negativa"
         )
 
-    # Como a malha e uniforme, soma(rhs) = 0 equivale a media(rhs) = 0.
-    # A escala evita comparar um erro de arredondamento absoluto
-    # com campos de amplitudes muito diferentes.
+    # Em malha uniforme, a compatibilidade exige media(rhs) = 0.
+    # A tolerancia relativa permite pequenos erros numericos.
     mean_rhs = float(np.mean(rhs))
     scale_rhs = max(1.0, float(np.max(np.abs(rhs))))
 
@@ -77,13 +79,16 @@ def solve_poisson_gauss_seidel(
         phi = np.zeros(shape, dtype=np.float64)
     else:
         initial_phi = np.asarray(initial_phi, dtype=np.float64)
+
         if initial_phi.shape != shape:
             raise ValueError("Shape de initial_phi incompatível")
+
         if not np.all(np.isfinite(initial_phi)):
             raise ValueError("initial_phi deve ser finito")
+
         phi = initial_phi.copy()
 
-    # Fixa o representante da familia de solucoes.
+    # Fixa a referencia de media zero.
     phi -= np.mean(phi)
 
     ny, nx = shape
@@ -92,9 +97,16 @@ def solve_poisson_gauss_seidel(
         residual_field = rhs - apply_poisson_system(
             phi, coefficients
         )
-        return float(np.linalg.norm(residual_field) / np.sqrt(rhs.size))
+        return float(
+            np.linalg.norm(residual_field) / np.sqrt(rhs.size)
+        )
 
     residual = true_residual()
+
+    # Evita iniciar a iteracao com residuo invalido.
+    if not np.isfinite(residual):
+        raise FloatingPointError("Residuo inicial nao finito")
+
     history = [residual]
 
     if residual <= tolerance:
@@ -120,14 +132,17 @@ def solve_poisson_gauss_seidel(
                     neighbor_sum += (
                         coefficients.east[j, i] * phi[j, i + 1]
                     )
+
                 if i > 0:
                     neighbor_sum += (
                         coefficients.west[j, i] * phi[j, i - 1]
                     )
+
                 if j + 1 < ny:
                     neighbor_sum += (
                         coefficients.north[j, i] * phi[j + 1, i]
                     )
+
                 if j > 0:
                     neighbor_sum += (
                         coefficients.south[j, i] * phi[j - 1, i]
@@ -137,7 +152,7 @@ def solve_poisson_gauss_seidel(
                     rhs[j, i] + neighbor_sum
                 ) / diagonal
 
-        # Remover a media nao altera A(phi), pois A(1) = 0.
+        # A subtracao da media nao altera A(phi).
         phi -= np.mean(phi)
 
         residual = true_residual()
