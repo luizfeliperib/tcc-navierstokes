@@ -32,4 +32,4 @@ jobs:
         run: python -m ruff check .
 
       - name: Run Pytest
-        run: python -m pytest -m "" -q
+        run: python -m pytest -o addopts= -q
