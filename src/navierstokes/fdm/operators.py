@@ -1,4 +1,3 @@
-
 """Operadores discretos para malha cartesiana cell-centered."""
 
 import numpy as np

@@ -127,3 +127,25 @@ def test_invalid_field_shapes(grid):
 
     with pytest.raises(ValueError):
         laplacian_neumann(wrong_phi, grid)
+
+def test_laplacian_interior_five_point_stencil():
+    """Verifica o Laplaciano em uma célula interior."""
+
+    grid = create_grid(
+        SimulationConfig(
+            nx=3,
+            ny=3,
+            lx=3.0,
+            ly=3.0,
+        )
+    )
+
+    phi = np.array([
+        [0.0, 2.0, 0.0],
+        [4.0, 10.0, 6.0],
+        [0.0, 8.0, 0.0],
+    ])
+
+    result = laplacian_neumann(phi, grid)
+
+    assert result[1, 1] == pytest.approx(-20.0)

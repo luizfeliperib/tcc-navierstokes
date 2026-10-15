@@ -9,37 +9,26 @@ def test_default_grid_geometry():
     config = SimulationConfig()
     grid = create_grid(config)
 
-    expected_dx = config.lx / config.nx
-    expected_dy = config.ly / config.ny
+    assert grid.nx == config.nx
+    assert grid.ny == config.ny
 
-    assert grid.dx == pytest.approx(expected_dx)
-    assert grid.dy == pytest.approx(expected_dy)
+    assert grid.dx == pytest.approx(config.lx / config.nx)
+    assert grid.dy == pytest.approx(config.ly / config.ny)
 
-    assert grid.x.shape == (config.nx,)
-    assert grid.y.shape == (config.ny,)
+    assert grid.x[0] == pytest.approx(grid.dx / 2)
+    assert grid.y[0] == pytest.approx(grid.dy / 2)
 
-    assert grid.x[0] == pytest.approx(expected_dx / 2)
     assert grid.x[-1] == pytest.approx(
-        config.lx - expected_dx / 2
+        config.lx - grid.dx / 2
     )
-
-    assert grid.y[0] == pytest.approx(expected_dy / 2)
     assert grid.y[-1] == pytest.approx(
-        config.ly - expected_dy / 2
+        config.ly - grid.dy / 2
     )
 
-def test_initialize_fields_uses_ny_nx_shape():
-    config = SimulationConfig(nx=31, ny=21)
-    u, v, p = initialize_fields(config)
-
-    assert u.shape == (21, 31)
-    assert v.shape == (21, 31)
-    assert p.shape == (21, 31)
-    assert np.all(u == 0.0)
-    assert np.all(v == 0.0)
-    assert np.all(p == 0.0)
-
-
+    assert grid.cell_area == pytest.approx(
+        grid.dx * grid.dy
+    )
+    
 def test_grid_requires_at_least_two_points_per_direction():
     with pytest.raises(ValueError):
         create_grid(SimulationConfig(nx=1))
@@ -77,19 +66,28 @@ def test_grid_shapes():
     assert y.shape == (30, 50)
 
 
-def test_initialize_fields():
-    config = SimulationConfig(nx=8, ny=6)
+@pytest.mark.parametrize(
+    "nx, ny",
+    [
+        (8, 6),
+        (31, 21),
+        (50, 30),
+    ],
+)
+def test_initialize_fields(nx, ny):
+    config = SimulationConfig(nx=nx, ny=ny)
 
     u, v, p = initialize_fields(config)
 
-    assert u.shape == (6, 8)
-    assert v.shape == (6, 8)
-    assert p.shape == (6, 8)
+    expected_shape = (ny, nx)
 
-    np.testing.assert_array_equal(u, 0.0)
-    np.testing.assert_array_equal(v, 0.0)
-    np.testing.assert_array_equal(p, 0.0)
-
+    for field in (u, v, p):
+        assert field.shape == expected_shape
+        assert field.dtype == np.float64
+        np.testing.assert_array_equal(
+            field,
+            np.zeros(expected_shape),
+        )
 
 @pytest.mark.parametrize(
     "nx, ny, lx, ly, expected_exception",
