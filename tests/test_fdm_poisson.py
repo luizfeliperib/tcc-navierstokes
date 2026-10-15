@@ -22,7 +22,6 @@ from navierstokes.fdm.poisson import (
     assemble_poisson_coefficients,
 )
 
-
 GRID_CASES = [
     pytest.param(8, 6, 2.0, 1.0, id="base-8x6"),
     pytest.param(
