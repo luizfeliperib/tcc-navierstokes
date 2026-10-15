@@ -11,30 +11,55 @@ def apply_velocity_boundary_conditions(
     u: NDArray[np.float64],
     v: NDArray[np.float64],
     config: SimulationConfig,
-) -> None:
-    """Aplica, in-place, as condições de não deslizamento e da tampa móvel."""
-    expected_shape = (config.ny, config.nx)
-    if u.shape != expected_shape or v.shape != expected_shape:
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+    """
+    Constrói campos com células fantasmas para a
+    cavidade com tampa móvel em malha cell-centered.
+
+    Os campos originais não são modificados.
+
+    Retorna:
+        u_ext, v_ext: arrays (ny + 2, nx + 2).
+    """
+
+    expected = (config.ny, config.nx)
+
+    if u.shape != expected or v.shape != expected:
         raise ValueError(
-            f"u e v devem possuir shape {expected_shape}; "
+            f"u e v devem possuir shape {expected}; "
             f"recebidos {u.shape} e {v.shape}"
         )
 
-    # Paredes inferior e laterais: condição de não deslizamento.
-    u[0, :] = 0.0
-    u[:, 0] = 0.0
-    u[:, -1] = 0.0
+    u_ext = np.zeros(
+        (config.ny + 2, config.nx + 2),
+        dtype=np.float64,
+    )
+    v_ext = np.zeros_like(u_ext)
 
-    # Tampa superior: velocidade horizontal prescrita.
-    # A tampa prevalece nos dois cantos superiores.
-    u[-1, :] = config.lid_velocity
+    # Copia os valores dos centros das células.
+    u_ext[1:-1, 1:-1] = u
+    v_ext[1:-1, 1:-1] = v
 
-    # Não há velocidade normal em nenhuma parede.
-    v[0, :] = 0.0
-    v[-1, :] = 0.0
-    v[:, 0] = 0.0
-    v[:, -1] = 0.0
+    # Parede inferior: u = 0, v = 0.
+    u_ext[0, 1:-1] = -u_ext[1, 1:-1]
+    v_ext[0, 1:-1] = -v_ext[1, 1:-1]
 
+    # Parede superior: u = U_tampa, v = 0.
+    u_ext[-1, 1:-1] = (
+        2.0 * config.lid_velocity
+        - u_ext[-2, 1:-1]
+    )
+    v_ext[-1, 1:-1] = -v_ext[-2, 1:-1]
+
+    # Parede esquerda: u = 0, v = 0.
+    u_ext[1:-1, 0] = -u_ext[1:-1, 1]
+    v_ext[1:-1, 0] = -v_ext[1:-1, 1]
+
+    # Parede direita: u = 0, v = 0.
+    u_ext[1:-1, -1] = -u_ext[1:-1, -2]
+    v_ext[1:-1, -1] = -v_ext[1:-1, -2]
+
+    return u_ext, v_ext
 
 def interpolate_impermeable_faces(
     u: NDArray[np.float64],
