@@ -4,9 +4,78 @@ import numpy as np
 from numpy.typing import NDArray
 
 from navierstokes.fdm.boundary import interpolate_impermeable_faces
+from navierstokes.fdm.gauss_seidel import (
+    GaussSeidelResult,
+    solve_poisson_gauss_seidel,
+)
 from navierstokes.fdm.grid import CartesianGrid
+from navierstokes.fdm.operators import divergence_faces
+from navierstokes.fdm.poisson import assemble_poisson_coefficients
 from navierstokes.fdm.predictor import _check_field
 
+
+def solve_projection_pressure(
+    u_faces_star: NDArray,
+    v_faces_star: NDArray,
+    grid: CartesianGrid,
+    *,
+    density: float,
+    dt: float,
+    tolerance: float = 1e-8,
+    max_iterations: int = 10_000,
+    initial_pressure: NDArray | None = None,
+) -> GaussSeidelResult:
+    """Resolve A p = -(rho/dt) D_h(u_f*), com A = -D_h G_h.
+
+    Exige cavidade impermeável e compatibilidade do termo-fonte.
+    Rejeita soluções que não atingiram a tolerância especificada.
+    """
+    _check_field(u_faces_star, grid.u_face_shape, "u_faces_star")
+    _check_field(v_faces_star, grid.v_face_shape, "v_faces_star")
+
+    if not np.isfinite(density) or density <= 0:
+        raise ValueError("density deve ser finita e positiva")
+    if not np.isfinite(dt) or dt <= 0:
+        raise ValueError("dt deve ser finito e positivo")
+
+    if not (
+        np.allclose(
+            u_faces_star[:, [0, -1]], 0.0, atol=1e-14, rtol=0
+        )
+        and np.allclose(
+            v_faces_star[[0, -1], :], 0.0, atol=1e-14, rtol=0
+        )
+    ):
+        raise ValueError(
+            "Cavidade impermeável exige fluxos normais externos nulos"
+        )
+
+    divergence = divergence_faces(
+        u_faces_star, v_faces_star, grid
+    )
+    rhs = -(density / dt) * divergence
+
+    if not np.all(np.isfinite(rhs)):
+        raise ValueError("Termo-fonte de pressão não finito")
+
+    coefficients = assemble_poisson_coefficients(grid)
+
+    result = solve_poisson_gauss_seidel(
+        rhs,
+        coefficients,
+        tolerance=tolerance,
+        max_iterations=max_iterations,
+        initial_phi=initial_pressure,
+    )
+
+    if not result.converged:
+        raise RuntimeError(
+            "Poisson não convergiu: "
+            f"iterações={result.iterations}, "
+            f"resíduo={result.residual:.6e}"
+        )
+
+    return result
 
 def predict_face_fluxes(
     u: NDArray,
