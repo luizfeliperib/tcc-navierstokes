@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "tcc-navierstokes"
 version = "0.1.0"
-description = "Modelagem numérica 2D das equações de Navier-Stokes por FDM e FVM."
+description = "Modelagem numérica 2D das equações de Navier-Stokes por FDM."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
