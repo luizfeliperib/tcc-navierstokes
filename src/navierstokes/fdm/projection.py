@@ -1,5 +1,7 @@
 """FDM-06: construção e projeção dos fluxos nas faces."""
 
+from typing import Literal
+
 import numpy as np
 from numpy.typing import NDArray
 
@@ -129,6 +131,7 @@ def solve_projection_pressure(
     tolerance: float = 1e-8,
     max_iterations: int = 10_000,
     initial_pressure: NDArray | None = None,
+    backend: Literal["python", "numba"] = "python"
 ) -> GaussSeidelResult:
     """Resolve A p = -(rho/dt) D_h(u_f*), com A = -D_h G_h.
 
@@ -171,6 +174,7 @@ def solve_projection_pressure(
         tolerance=tolerance,
         max_iterations=max_iterations,
         initial_phi=initial_pressure,
+        backend=backend
     )
 
     if not result.converged:
