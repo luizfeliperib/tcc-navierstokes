@@ -6,8 +6,8 @@ import numpy as np
 import pytest
 
 from navierstokes.config import SimulationConfig
-from navierstokes.fdm.operators import divergence_faces
 from navierstokes.fdm.grid import create_grid
+from navierstokes.fdm.operators import divergence_faces
 from navierstokes.fdm.predictor import (
     convection_upwind,
     stable_timestep_limit,
