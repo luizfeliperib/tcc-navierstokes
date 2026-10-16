@@ -49,7 +49,11 @@ def solve_poisson_gauss_seidel(
     if not np.isfinite(tolerance) or tolerance <= 0:
         raise ValueError("tolerance deve ser finita e positiva")
 
-    if not isinstance(max_iterations, int) or max_iterations < 1:
+    if (
+        isinstance(max_iterations, (bool, np.bool_))
+        or not isinstance(max_iterations, (int, np.integer))
+        or max_iterations < 1
+    ):
         raise ValueError("max_iterations deve ser inteiro positivo")
 
     if (
@@ -98,6 +102,10 @@ def solve_poisson_gauss_seidel(
         return float(residual / np.sqrt(rhs.size))
 
     residual = true_residual()
+
+    if not np.isfinite(residual):
+        raise FloatingPointError("Residuo inicial nao finito")
+
     history = [residual]
 
     if residual <= tolerance:
