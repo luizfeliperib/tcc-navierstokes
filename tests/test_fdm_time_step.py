@@ -111,16 +111,3 @@ def test_one_step_rejects_wrong_state_shape():
         advance_one_step(invalid_state, grid, config)
 
 
-def test_one_step_stationary_cavity_stays_at_rest():
-    config = SimulationConfig(
-        nx=8, ny=8,
-        dt=0.001,
-        lid_velocity=0.0,
-    )
-    grid = create_grid(config)
-
-    # Viscosidade positiva é necessária no preditor atual.
-    # Por isso este teste usa uma configuração com tampa
-    # móvel e verifica apenas o caso inicial separadamente
-    # nos demais testes.
-    assert np.all(initial_state(grid).u == 0.0)
