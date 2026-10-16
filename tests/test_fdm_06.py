@@ -13,12 +13,13 @@ from navierstokes.fdm.poisson import (
     assemble_poisson_coefficients,
 )
 from navierstokes.fdm.projection import (
+    correct_center_velocities,
     correct_face_fluxes,
     predict_face_fluxes,
+    pressure_gradient_centers,
     solve_projection_pressure,
-    correct_center_velocities,
-    pressure_gradient_centers
 )
+
 
 def test_center_pressure_gradient_matches_central_difference():
     grid = create_grid(SimulationConfig(nx=8, ny=6))
