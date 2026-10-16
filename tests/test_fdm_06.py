@@ -16,8 +16,127 @@ from navierstokes.fdm.projection import (
     correct_face_fluxes,
     predict_face_fluxes,
     solve_projection_pressure,
+    correct_center_velocities,
+    pressure_gradient_centers
 )
 
+def test_center_pressure_gradient_matches_central_difference():
+    grid = create_grid(SimulationConfig(nx=8, ny=6))
+    rng = np.random.default_rng(17)
+    pressure = rng.normal(size=grid.scalar_shape)
+
+    gx, gy = pressure_gradient_centers(pressure, grid)
+
+    np.testing.assert_allclose(
+        gx[:, 1:-1],
+        (pressure[:, 2:] - pressure[:, :-2]) / (2 * grid.dx),
+    )
+    np.testing.assert_allclose(
+        gy[1:-1, :],
+        (pressure[2:, :] - pressure[:-2, :]) / (2 * grid.dy),
+    )
+
+def test_center_pressure_gradient_boundary_closure():
+    grid = create_grid(SimulationConfig(nx=7, ny=5))
+    rng = np.random.default_rng(18)
+    pressure = rng.normal(size=grid.scalar_shape)
+
+    gx, gy = pressure_gradient_centers(pressure, grid)
+
+    np.testing.assert_allclose(
+        gx[:, 0],
+        (pressure[:, 1] - pressure[:, 0]) / (2 * grid.dx),
+    )
+    np.testing.assert_allclose(
+        gx[:, -1],
+        (pressure[:, -1] - pressure[:, -2]) / (2 * grid.dx),
+    )
+    np.testing.assert_allclose(
+        gy[0, :],
+        (pressure[1, :] - pressure[0, :]) / (2 * grid.dy),
+    )
+    np.testing.assert_allclose(
+        gy[-1, :],
+        (pressure[-1, :] - pressure[-2, :]) / (2 * grid.dy),
+    )
+
+def test_center_correction_with_constant_pressure():
+    grid = create_grid(SimulationConfig(nx=8, ny=6))
+    rng = np.random.default_rng(19)
+
+    u_star = rng.normal(size=grid.scalar_shape)
+    v_star = rng.normal(size=grid.scalar_shape)
+    pressure = np.full(grid.scalar_shape, 7.0)
+
+    u_new, v_new = correct_center_velocities(
+        u_star, v_star, pressure, grid,
+        density=1.0, dt=0.01,
+    )
+
+    np.testing.assert_array_equal(u_new, u_star)
+    np.testing.assert_array_equal(v_new, v_star)
+
+def test_center_correction_matches_pressure_gradient():
+    grid = create_grid(SimulationConfig(nx=8, ny=6))
+    x, y = grid.cell_centers()
+
+    pressure = np.cos(2 * np.pi * x) * np.cos(2 * np.pi * y)
+    gx, gy = pressure_gradient_centers(pressure, grid)
+
+    density = 2.0
+    dt = 0.02
+    u_star = np.ones(grid.scalar_shape)
+    v_star = np.full(grid.scalar_shape, -0.5)
+
+    u_new, v_new = correct_center_velocities(
+        u_star, v_star, pressure, grid,
+        density=density, dt=dt,
+    )
+
+    np.testing.assert_allclose(
+        u_new, u_star - (dt / density) * gx
+    )
+    np.testing.assert_allclose(
+        v_new, v_star - (dt / density) * gy
+    )
+
+def test_center_correction_preserves_inputs():
+    grid = create_grid(SimulationConfig(nx=6, ny=5))
+    rng = np.random.default_rng(20)
+
+    u_star = rng.normal(size=grid.scalar_shape)
+    v_star = rng.normal(size=grid.scalar_shape)
+    pressure = rng.normal(size=grid.scalar_shape)
+
+    originals = [
+        arr.copy() for arr in (u_star, v_star, pressure)
+    ]
+
+    correct_center_velocities(
+        u_star, v_star, pressure, grid,
+        density=1.0, dt=0.01,
+    )
+
+    for actual, original in zip(
+        (u_star, v_star, pressure), originals
+    ):
+        np.testing.assert_array_equal(actual, original)
+
+def test_center_correction_rejects_invalid_parameters():
+    grid = create_grid(SimulationConfig(nx=5, ny=4))
+    field = grid.zeros_scalar()
+
+    with pytest.raises(ValueError, match="density"):
+        correct_center_velocities(
+            field, field, field, grid,
+            density=0.0, dt=0.01,
+        )
+
+    with pytest.raises(ValueError, match="dt"):
+        correct_center_velocities(
+            field, field, field, grid,
+            density=1.0, dt=0.0,
+        )
 
 def test_face_correction_preserves_zero_pressure_fluxes():
     grid = create_grid(SimulationConfig(nx=7, ny=5))

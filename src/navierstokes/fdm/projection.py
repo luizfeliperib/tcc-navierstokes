@@ -14,6 +14,65 @@ from navierstokes.fdm.poisson import assemble_poisson_coefficients
 from navierstokes.fdm.predictor import _check_field
 
 
+def pressure_gradient_centers(
+    pressure: NDArray,
+    grid: CartesianGrid,
+) -> tuple[NDArray, NDArray]:
+    """Calcula o gradiente central a partir dos gradientes nas faces.
+
+    No interior, equivale a diferenças centrais de segunda ordem.
+    Nas células adjacentes às paredes, utiliza Neumann homogênea
+    nas faces externas, conforme o operador G_h existente.
+    """
+    _check_field(pressure, grid.scalar_shape, "pressure")
+
+    grad_px_faces, grad_py_faces = gradient_faces(pressure, grid)
+
+    grad_px = 0.5 * (
+        grad_px_faces[:, :-1] + grad_px_faces[:, 1:]
+    )
+    grad_py = 0.5 * (
+        grad_py_faces[:-1, :] + grad_py_faces[1:, :]
+    )
+
+    return grad_px, grad_py
+
+
+def correct_center_velocities(
+    u_star: NDArray,
+    v_star: NDArray,
+    pressure: NDArray,
+    grid: CartesianGrid,
+    *,
+    density: float,
+    dt: float,
+) -> tuple[NDArray, NDArray]:
+    """Corrige diretamente as velocidades nos centros das células.
+
+    Não reconstrói velocidades a partir dos fluxos projetados.
+    As condições de Dirichlet nas paredes são aplicadas pelo
+    mecanismo de células fantasmas já existente.
+    """
+    _check_field(u_star, grid.scalar_shape, "u_star")
+    _check_field(v_star, grid.scalar_shape, "v_star")
+    _check_field(pressure, grid.scalar_shape, "pressure")
+
+    if not np.isfinite(density) or density <= 0:
+        raise ValueError("density deve ser finita e positiva")
+    if not np.isfinite(dt) or dt <= 0:
+        raise ValueError("dt deve ser finito e positivo")
+
+    grad_px, grad_py = pressure_gradient_centers(
+        pressure, grid
+    )
+
+    factor = dt / density
+
+    u_new = u_star - factor * grad_px
+    v_new = v_star - factor * grad_py
+
+    return u_new, v_new
+
 def correct_face_fluxes(
     u_faces_star: NDArray,
     v_faces_star: NDArray,
