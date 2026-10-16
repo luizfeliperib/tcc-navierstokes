@@ -1,4 +1,3 @@
-
 """Testes da construção incremental dos fluxos provisórios."""
 
 import numpy as np
@@ -37,6 +36,7 @@ def test_center_pressure_gradient_matches_central_difference():
         (pressure[2:, :] - pressure[:-2, :]) / (2 * grid.dy),
     )
 
+
 def test_center_pressure_gradient_boundary_closure():
     grid = create_grid(SimulationConfig(nx=7, ny=5))
     rng = np.random.default_rng(18)
@@ -61,6 +61,7 @@ def test_center_pressure_gradient_boundary_closure():
         (pressure[-1, :] - pressure[-2, :]) / (2 * grid.dy),
     )
 
+
 def test_center_correction_with_constant_pressure():
     grid = create_grid(SimulationConfig(nx=8, ny=6))
     rng = np.random.default_rng(19)
@@ -70,12 +71,17 @@ def test_center_correction_with_constant_pressure():
     pressure = np.full(grid.scalar_shape, 7.0)
 
     u_new, v_new = correct_center_velocities(
-        u_star, v_star, pressure, grid,
-        density=1.0, dt=0.01,
+        u_star,
+        v_star,
+        pressure,
+        grid,
+        density=1.0,
+        dt=0.01,
     )
 
     np.testing.assert_array_equal(u_new, u_star)
     np.testing.assert_array_equal(v_new, v_star)
+
 
 def test_center_correction_matches_pressure_gradient():
     grid = create_grid(SimulationConfig(nx=8, ny=6))
@@ -90,16 +96,17 @@ def test_center_correction_matches_pressure_gradient():
     v_star = np.full(grid.scalar_shape, -0.5)
 
     u_new, v_new = correct_center_velocities(
-        u_star, v_star, pressure, grid,
-        density=density, dt=dt,
+        u_star,
+        v_star,
+        pressure,
+        grid,
+        density=density,
+        dt=dt,
     )
 
-    np.testing.assert_allclose(
-        u_new, u_star - (dt / density) * gx
-    )
-    np.testing.assert_allclose(
-        v_new, v_star - (dt / density) * gy
-    )
+    np.testing.assert_allclose(u_new, u_star - (dt / density) * gx)
+    np.testing.assert_allclose(v_new, v_star - (dt / density) * gy)
+
 
 def test_center_correction_preserves_inputs():
     grid = create_grid(SimulationConfig(nx=6, ny=5))
@@ -109,19 +116,20 @@ def test_center_correction_preserves_inputs():
     v_star = rng.normal(size=grid.scalar_shape)
     pressure = rng.normal(size=grid.scalar_shape)
 
-    originals = [
-        arr.copy() for arr in (u_star, v_star, pressure)
-    ]
+    originals = [arr.copy() for arr in (u_star, v_star, pressure)]
 
     correct_center_velocities(
-        u_star, v_star, pressure, grid,
-        density=1.0, dt=0.01,
+        u_star,
+        v_star,
+        pressure,
+        grid,
+        density=1.0,
+        dt=0.01,
     )
 
-    for actual, original in zip(
-        (u_star, v_star, pressure), originals
-    ):
+    for actual, original in zip((u_star, v_star, pressure), originals):
         np.testing.assert_array_equal(actual, original)
+
 
 def test_center_correction_rejects_invalid_parameters():
     grid = create_grid(SimulationConfig(nx=5, ny=4))
@@ -129,15 +137,24 @@ def test_center_correction_rejects_invalid_parameters():
 
     with pytest.raises(ValueError, match="density"):
         correct_center_velocities(
-            field, field, field, grid,
-            density=0.0, dt=0.01,
+            field,
+            field,
+            field,
+            grid,
+            density=0.0,
+            dt=0.01,
         )
 
     with pytest.raises(ValueError, match="dt"):
         correct_center_velocities(
-            field, field, field, grid,
-            density=1.0, dt=0.0,
+            field,
+            field,
+            field,
+            grid,
+            density=1.0,
+            dt=0.0,
         )
+
 
 def test_face_correction_preserves_zero_pressure_fluxes():
     grid = create_grid(SimulationConfig(nx=7, ny=5))
@@ -149,8 +166,12 @@ def test_face_correction_preserves_zero_pressure_fluxes():
     vf[[0, -1], :] = 0.0
 
     uf_new, vf_new = correct_face_fluxes(
-        uf, vf, grid.zeros_scalar(), grid,
-        density=1.0, dt=0.01,
+        uf,
+        vf,
+        grid.zeros_scalar(),
+        grid,
+        density=1.0,
+        dt=0.01,
     )
 
     np.testing.assert_array_equal(uf_new, uf)
@@ -171,8 +192,12 @@ def test_face_correction_manufactured_pressure():
     vf_star = (dt / density) * gy
 
     uf_new, vf_new = correct_face_fluxes(
-        uf_star, vf_star, pressure, grid,
-        density=density, dt=dt,
+        uf_star,
+        vf_star,
+        pressure,
+        grid,
+        density=density,
+        dt=dt,
     )
 
     np.testing.assert_allclose(uf_new, 0.0, atol=1e-14)
@@ -193,7 +218,9 @@ def test_face_projection_divergence_matches_poisson_residual():
     vf_star = (dt / density) * gy
 
     result = solve_projection_pressure(
-        uf_star, vf_star, grid,
+        uf_star,
+        vf_star,
+        grid,
         density=density,
         dt=dt,
         tolerance=1e-10,
@@ -201,19 +228,19 @@ def test_face_projection_divergence_matches_poisson_residual():
     )
 
     uf_new, vf_new = correct_face_fluxes(
-        uf_star, vf_star, result.phi, grid,
-        density=density, dt=dt,
+        uf_star,
+        vf_star,
+        result.phi,
+        grid,
+        density=density,
+        dt=dt,
     )
 
     divergence_new = divergence_faces(uf_new, vf_new, grid)
 
     coefficients = assemble_poisson_coefficients(grid)
-    rhs = -(density / dt) * divergence_faces(
-        uf_star, vf_star, grid
-    )
-    residual_field = rhs - apply_poisson_system(
-        result.phi, coefficients
-    )
+    rhs = -(density / dt) * divergence_faces(uf_star, vf_star, grid)
+    residual_field = rhs - apply_poisson_system(result.phi, coefficients)
 
     np.testing.assert_allclose(
         divergence_new,
@@ -222,13 +249,9 @@ def test_face_projection_divergence_matches_poisson_residual():
         rtol=1e-10,
     )
 
-    rms_divergence = np.linalg.norm(divergence_new) / np.sqrt(
-        divergence_new.size
-    )
+    rms_divergence = np.linalg.norm(divergence_new) / np.sqrt(divergence_new.size)
 
-    assert rms_divergence <= (
-        (dt / density) * result.residual + 1e-12
-    )
+    assert rms_divergence <= ((dt / density) * result.residual + 1e-12)
 
 
 def test_face_correction_preserves_inputs_and_walls():
@@ -244,13 +267,15 @@ def test_face_correction_preserves_inputs_and_walls():
     originals = [arr.copy() for arr in (uf, vf, pressure)]
 
     uf_new, vf_new = correct_face_fluxes(
-        uf, vf, pressure, grid,
-        density=1.0, dt=0.01,
+        uf,
+        vf,
+        pressure,
+        grid,
+        density=1.0,
+        dt=0.01,
     )
 
-    for actual, original in zip(
-        (uf, vf, pressure), originals
-    ):
+    for actual, original in zip((uf, vf, pressure), originals):
         np.testing.assert_array_equal(actual, original)
 
     np.testing.assert_array_equal(uf_new[:, [0, -1]], 0.0)
@@ -302,9 +327,7 @@ def test_projection_pressure_manufactured_solution():
     )
 
     assert result.converged
-    np.testing.assert_allclose(
-        result.phi, exact, atol=1e-8, rtol=0
-    )
+    np.testing.assert_allclose(result.phi, exact, atol=1e-8, rtol=0)
 
 
 def test_projection_pressure_rejects_invalid_inputs():
@@ -313,22 +336,17 @@ def test_projection_pressure_rejects_invalid_inputs():
     vf = grid.zeros_v_faces()
 
     with pytest.raises(ValueError, match="density"):
-        solve_projection_pressure(
-            uf, vf, grid, density=0.0, dt=0.01
-        )
+        solve_projection_pressure(uf, vf, grid, density=0.0, dt=0.01)
 
     with pytest.raises(ValueError, match="dt"):
-        solve_projection_pressure(
-            uf, vf, grid, density=1.0, dt=0.0
-        )
+        solve_projection_pressure(uf, vf, grid, density=1.0, dt=0.0)
 
     bad = uf.copy()
     bad[:, 0] = 1.0
 
     with pytest.raises(ValueError, match="fluxos normais"):
-        solve_projection_pressure(
-            bad, vf, grid, density=1.0, dt=0.01
-        )
+        solve_projection_pressure(bad, vf, grid, density=1.0, dt=0.01)
+
 
 def test_zero_increment_preserves_existing_face_fluxes():
     grid = create_grid(SimulationConfig(nx=8, ny=6))
@@ -342,9 +360,7 @@ def test_zero_increment_preserves_existing_face_fluxes():
     uf[:, [0, -1]] = 0.0
     vf[[0, -1], :] = 0.0
 
-    uf_star, vf_star = predict_face_fluxes(
-        u, v, u.copy(), v.copy(), uf, vf, grid
-    )
+    uf_star, vf_star = predict_face_fluxes(u, v, u.copy(), v.copy(), uf, vf, grid)
 
     np.testing.assert_array_equal(uf_star, uf)
     np.testing.assert_array_equal(vf_star, vf)
@@ -359,8 +375,7 @@ def test_increment_is_interpolated_to_internal_faces():
     v_star = np.tile(np.arange(3, dtype=float)[:, None], (1, 4))
 
     uf_star, vf_star = predict_face_fluxes(
-        u, v, u_star, v_star,
-        grid.zeros_u_faces(), grid.zeros_v_faces(), grid
+        u, v, u_star, v_star, grid.zeros_u_faces(), grid.zeros_v_faces(), grid
     )
 
     np.testing.assert_allclose(
@@ -380,14 +395,13 @@ def test_inputs_are_not_modified():
     grid = create_grid(SimulationConfig(nx=6, ny=5))
     rng = np.random.default_rng(123)
 
-    fields = [
-        rng.normal(size=grid.scalar_shape)
-        for _ in range(4)
-    ]
-    fields.extend([
-        grid.zeros_u_faces(),
-        grid.zeros_v_faces(),
-    ])
+    fields = [rng.normal(size=grid.scalar_shape) for _ in range(4)]
+    fields.extend(
+        [
+            grid.zeros_u_faces(),
+            grid.zeros_v_faces(),
+        ]
+    )
     originals = [field.copy() for field in fields]
 
     predict_face_fluxes(*fields, grid)
@@ -419,8 +433,7 @@ def test_divergence_is_not_assumed_zero_before_projection():
     v_star = np.zeros_like(y)
 
     uf_star, vf_star = predict_face_fluxes(
-        u, v, u_star, v_star,
-        grid.zeros_u_faces(), grid.zeros_v_faces(), grid
+        u, v, u_star, v_star, grid.zeros_u_faces(), grid.zeros_v_faces(), grid
     )
 
     div = divergence_faces(uf_star, vf_star, grid)

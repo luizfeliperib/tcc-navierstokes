@@ -1,4 +1,3 @@
-
 """Executa um diagnóstico exploratório de 100 passos."""
 
 from navierstokes.config import SimulationConfig

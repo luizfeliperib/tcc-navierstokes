@@ -1,4 +1,3 @@
-
 """Varredura Gauss-Seidel compilada, preservando a ordem lexicografica."""
 
 import numpy as np
@@ -36,6 +35,4 @@ def gauss_seidel_sweep(
             if j > 0:
                 neighbor_sum += south[j, i] * phi[j - 1, i]
 
-            phi[j, i] = (
-                rhs[j, i] + neighbor_sum
-            ) / center[j, i]
+            phi[j, i] = (rhs[j, i] + neighbor_sum) / center[j, i]

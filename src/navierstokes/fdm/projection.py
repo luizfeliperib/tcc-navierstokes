@@ -30,12 +30,8 @@ def pressure_gradient_centers(
 
     grad_px_faces, grad_py_faces = gradient_faces(pressure, grid)
 
-    grad_px = 0.5 * (
-        grad_px_faces[:, :-1] + grad_px_faces[:, 1:]
-    )
-    grad_py = 0.5 * (
-        grad_py_faces[:-1, :] + grad_py_faces[1:, :]
-    )
+    grad_px = 0.5 * (grad_px_faces[:, :-1] + grad_px_faces[:, 1:])
+    grad_py = 0.5 * (grad_py_faces[:-1, :] + grad_py_faces[1:, :])
 
     return grad_px, grad_py
 
@@ -64,9 +60,7 @@ def correct_center_velocities(
     if not np.isfinite(dt) or dt <= 0:
         raise ValueError("dt deve ser finito e positivo")
 
-    grad_px, grad_py = pressure_gradient_centers(
-        pressure, grid
-    )
+    grad_px, grad_py = pressure_gradient_centers(pressure, grid)
 
     factor = dt / density
 
@@ -74,6 +68,7 @@ def correct_center_velocities(
     v_new = v_star - factor * grad_py
 
     return u_new, v_new
+
 
 def correct_face_fluxes(
     u_faces_star: NDArray,
@@ -102,16 +97,10 @@ def correct_face_fluxes(
         raise ValueError("dt deve ser finito e positivo")
 
     if not (
-        np.allclose(
-            u_faces_star[:, [0, -1]], 0.0, atol=1e-14, rtol=0
-        )
-        and np.allclose(
-            v_faces_star[[0, -1], :], 0.0, atol=1e-14, rtol=0
-        )
+        np.allclose(u_faces_star[:, [0, -1]], 0.0, atol=1e-14, rtol=0)
+        and np.allclose(v_faces_star[[0, -1], :], 0.0, atol=1e-14, rtol=0)
     ):
-        raise ValueError(
-            "Cavidade impermeável exige fluxos normais externos nulos"
-        )
+        raise ValueError("Cavidade impermeável exige fluxos normais externos nulos")
 
     grad_px, grad_py = gradient_faces(pressure, grid)
     correction_factor = dt / density
@@ -120,6 +109,7 @@ def correct_face_fluxes(
     v_faces_new = v_faces_star - correction_factor * grad_py
 
     return u_faces_new, v_faces_new
+
 
 def solve_projection_pressure(
     u_faces_star: NDArray,
@@ -131,7 +121,7 @@ def solve_projection_pressure(
     tolerance: float = 1e-8,
     max_iterations: int = 10_000,
     initial_pressure: NDArray | None = None,
-    backend: Literal["python", "numba"] = "python"
+    backend: Literal["python", "numba"] = "python",
 ) -> GaussSeidelResult:
     """Resolve A p = -(rho/dt) D_h(u_f*), com A = -D_h G_h.
 
@@ -147,20 +137,12 @@ def solve_projection_pressure(
         raise ValueError("dt deve ser finito e positivo")
 
     if not (
-        np.allclose(
-            u_faces_star[:, [0, -1]], 0.0, atol=1e-14, rtol=0
-        )
-        and np.allclose(
-            v_faces_star[[0, -1], :], 0.0, atol=1e-14, rtol=0
-        )
+        np.allclose(u_faces_star[:, [0, -1]], 0.0, atol=1e-14, rtol=0)
+        and np.allclose(v_faces_star[[0, -1], :], 0.0, atol=1e-14, rtol=0)
     ):
-        raise ValueError(
-            "Cavidade impermeável exige fluxos normais externos nulos"
-        )
+        raise ValueError("Cavidade impermeável exige fluxos normais externos nulos")
 
-    divergence = divergence_faces(
-        u_faces_star, v_faces_star, grid
-    )
+    divergence = divergence_faces(u_faces_star, v_faces_star, grid)
     rhs = -(density / dt) * divergence
 
     if not np.all(np.isfinite(rhs)):
@@ -174,7 +156,7 @@ def solve_projection_pressure(
         tolerance=tolerance,
         max_iterations=max_iterations,
         initial_phi=initial_pressure,
-        backend=backend
+        backend=backend,
     )
 
     if not result.converged:
@@ -185,6 +167,7 @@ def solve_projection_pressure(
         )
 
     return result
+
 
 def predict_face_fluxes(
     u: NDArray,
@@ -216,16 +199,12 @@ def predict_face_fluxes(
         np.allclose(u_faces[:, [0, -1]], 0.0, atol=1e-14, rtol=0)
         and np.allclose(v_faces[[0, -1], :], 0.0, atol=1e-14, rtol=0)
     ):
-        raise ValueError(
-            "Cavidade impermeável exige fluxos normais externos nulos"
-        )
+        raise ValueError("Cavidade impermeável exige fluxos normais externos nulos")
 
     delta_u = u_star - u
     delta_v = v_star - v
 
-    delta_u_faces, delta_v_faces = interpolate_impermeable_faces(
-        delta_u, delta_v, grid
-    )
+    delta_u_faces, delta_v_faces = interpolate_impermeable_faces(delta_u, delta_v, grid)
 
     u_faces_star = u_faces + delta_u_faces
     v_faces_star = v_faces + delta_v_faces

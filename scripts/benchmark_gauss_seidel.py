@@ -1,4 +1,3 @@
-
 """Compara o tempo de execucao do Gauss-Seidel Python e Numba."""
 
 from time import perf_counter
@@ -46,9 +45,7 @@ def main():
             elapsed = perf_counter() - start
 
             if not result.converged:
-                raise RuntimeError(
-                    f"Poisson nao convergiu: {size}, {backend}"
-                )
+                raise RuntimeError(f"Poisson nao convergiu: {size}, {backend}")
 
             results[backend] = elapsed
 

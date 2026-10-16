@@ -1,4 +1,3 @@
-
 """Testes da integração temporal FDM-06.5."""
 
 import numpy as np
@@ -24,14 +23,14 @@ def initial_state(grid):
 
 
 def test_one_step_from_rest_with_moving_lid():
-    config = SimulationConfig(
-        nx=8, ny=8, dt=0.001, reynolds=100.0
-    )
+    config = SimulationConfig(nx=8, ny=8, dt=0.001, reynolds=100.0)
     grid = create_grid(config)
     state = initial_state(grid)
 
     result = advance_one_step(
-        state, grid, config,
+        state,
+        grid,
+        config,
         pressure_tolerance=1e-10,
     )
 
@@ -53,14 +52,13 @@ def test_one_step_from_rest_with_moving_lid():
 
 
 def test_one_step_preserves_input_state():
-    config = SimulationConfig(
-        nx=8, ny=8, dt=0.001
-    )
+    config = SimulationConfig(nx=8, ny=8, dt=0.001)
     grid = create_grid(config)
     state = initial_state(grid)
 
     originals = [
-        a.copy() for a in (
+        a.copy()
+        for a in (
             state.u,
             state.v,
             state.u_faces,
@@ -85,9 +83,7 @@ def test_one_step_preserves_input_state():
 
 
 def test_one_step_rejects_unstable_timestep():
-    config = SimulationConfig(
-        nx=8, ny=8, dt=10.0, reynolds=100.0
-    )
+    config = SimulationConfig(nx=8, ny=8, dt=10.0, reynolds=100.0)
     grid = create_grid(config)
 
     with pytest.raises(ValueError, match="excede limite"):
@@ -109,5 +105,3 @@ def test_one_step_rejects_wrong_state_shape():
 
     with pytest.raises(ValueError, match="u"):
         advance_one_step(invalid_state, grid, config)
-
-

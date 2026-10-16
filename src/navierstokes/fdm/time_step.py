@@ -1,4 +1,3 @@
-
 """FDM-06.5: integração de um passo temporal da cavidade."""
 
 from dataclasses import dataclass
@@ -48,7 +47,7 @@ def advance_one_step(
     *,
     pressure_tolerance: float = 1e-8,
     pressure_max_iterations: int = 10_000,
-    backend: Literal["python", "numba"] = "python"
+    backend: Literal["python", "numba"] = "python",
 ) -> TimeStepResult:
     """Executa um passo completo do método de projeção.
 

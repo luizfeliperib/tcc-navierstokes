@@ -1,4 +1,3 @@
-
 """Testes dos diagnósticos espaciais centro-face."""
 
 import numpy as np
@@ -69,8 +68,7 @@ def test_total_rms_respects_region_weights():
     n_boundary = n_total - n_interior
 
     expected_squared = (
-        n_interior * result.u_interior**2
-        + n_boundary * result.u_boundary**2
+        n_interior * result.u_interior**2 + n_boundary * result.u_boundary**2
     ) / n_total
 
     assert result.u_total**2 == pytest.approx(expected_squared)

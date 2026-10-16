@@ -26,8 +26,7 @@ def apply_velocity_boundary_conditions(
 
     if u.shape != expected or v.shape != expected:
         raise ValueError(
-            f"u e v devem possuir shape {expected}; "
-            f"recebidos {u.shape} e {v.shape}"
+            f"u e v devem possuir shape {expected}; recebidos {u.shape} e {v.shape}"
         )
 
     u_ext = np.zeros(
@@ -45,10 +44,7 @@ def apply_velocity_boundary_conditions(
     v_ext[0, 1:-1] = -v_ext[1, 1:-1]
 
     # Parede superior: u = U_tampa, v = 0.
-    u_ext[-1, 1:-1] = (
-        2.0 * config.lid_velocity
-        - u_ext[-2, 1:-1]
-    )
+    u_ext[-1, 1:-1] = 2.0 * config.lid_velocity - u_ext[-2, 1:-1]
     v_ext[-1, 1:-1] = -v_ext[-2, 1:-1]
 
     # Parede esquerda: u = 0, v = 0.
@@ -60,6 +56,7 @@ def apply_velocity_boundary_conditions(
     v_ext[1:-1, -1] = -v_ext[1:-1, -2]
 
     return u_ext, v_ext
+
 
 def interpolate_impermeable_faces(
     u: NDArray[np.float64],
@@ -76,19 +73,13 @@ def interpolate_impermeable_faces(
     expected = grid.scalar_shape
 
     if u.shape != expected or v.shape != expected:
-        raise ValueError(
-            f"u e v devem possuir shape {expected}"
-        )
+        raise ValueError(f"u e v devem possuir shape {expected}")
 
     u_faces = grid.zeros_u_faces()
     v_faces = grid.zeros_v_faces()
 
-    u_faces[:, 1:-1] = 0.5 * (
-        u[:, :-1] + u[:, 1:]
-    )
+    u_faces[:, 1:-1] = 0.5 * (u[:, :-1] + u[:, 1:])
 
-    v_faces[1:-1, :] = 0.5 * (
-        v[:-1, :] + v[1:, :]
-    )
+    v_faces[1:-1, :] = 0.5 * (v[:-1, :] + v[1:, :])
 
     return u_faces, v_faces

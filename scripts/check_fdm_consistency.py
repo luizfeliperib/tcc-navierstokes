@@ -1,4 +1,3 @@
-
 """Executa a cavidade e registra a consistência centro-face."""
 
 import csv

@@ -1,4 +1,3 @@
-
 """Equivalencia numerica entre Gauss-Seidel Python e Numba."""
 
 import numpy as np

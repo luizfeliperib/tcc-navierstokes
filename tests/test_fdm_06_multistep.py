@@ -1,4 +1,3 @@
-
 """FDM-06.6: testes integrados de múltiplos passos."""
 
 import numpy as np
@@ -44,9 +43,7 @@ def run_steps(config, number_of_steps=20):
 
 
 def test_multistep_mass_conservation():
-    config = SimulationConfig(
-        nx=8, ny=8, dt=0.001, reynolds=100.0
-    )
+    config = SimulationConfig(nx=8, ny=8, dt=0.001, reynolds=100.0)
     _, _, records = run_steps(config)
 
     for _, diag, pressure_result in records:
@@ -55,14 +52,15 @@ def test_multistep_mass_conservation():
 
 
 def test_multistep_fields_remain_finite():
-    config = SimulationConfig(
-        nx=8, ny=8, dt=0.001, reynolds=100.0
-    )
+    config = SimulationConfig(nx=8, ny=8, dt=0.001, reynolds=100.0)
     _, state, records = run_steps(config)
 
     for field in (
-        state.u, state.v, state.u_faces,
-        state.v_faces, state.pressure,
+        state.u,
+        state.v,
+        state.u_faces,
+        state.v_faces,
+        state.pressure,
     ):
         assert np.all(np.isfinite(field))
 
@@ -73,9 +71,7 @@ def test_multistep_fields_remain_finite():
 
 
 def test_multistep_lid_generates_motion():
-    config = SimulationConfig(
-        nx=8, ny=8, dt=0.001, reynolds=100.0
-    )
+    config = SimulationConfig(nx=8, ny=8, dt=0.001, reynolds=100.0)
     _, state, records = run_steps(config)
 
     assert np.max(state.u[-1, :]) > 0.0
@@ -83,9 +79,7 @@ def test_multistep_lid_generates_motion():
 
 
 def test_multistep_center_face_discrepancy_is_finite():
-    config = SimulationConfig(
-        nx=8, ny=8, dt=0.001, reynolds=100.0
-    )
+    config = SimulationConfig(nx=8, ny=8, dt=0.001, reynolds=100.0)
     _, _, records = run_steps(config)
 
     for _, diag, _ in records:
@@ -97,9 +91,7 @@ def test_multistep_center_face_discrepancy_is_finite():
 
 
 def test_multistep_pressure_converges():
-    config = SimulationConfig(
-        nx=8, ny=8, dt=0.001, reynolds=100.0
-    )
+    config = SimulationConfig(nx=8, ny=8, dt=0.001, reynolds=100.0)
     _, _, records = run_steps(config)
 
     for _, _, pressure_result in records:

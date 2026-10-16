@@ -25,38 +25,26 @@ class CartesianGrid:
             ("y", self.y),
         ):
             if not isinstance(coordinates, np.ndarray):
-                raise TypeError(
-                    f"{name} deve ser um ndarray"
-                )
+                raise TypeError(f"{name} deve ser um ndarray")
 
             if coordinates.ndim != 1:
-                raise ValueError(
-                    f"{name} deve ser unidimensional"
-                )
+                raise ValueError(f"{name} deve ser unidimensional")
 
             if coordinates.size < 2:
-                raise ValueError(
-                    f"{name} deve possuir pelo menos 2 centros"
-                )
+                raise ValueError(f"{name} deve possuir pelo menos 2 centros")
 
             if not np.all(np.isfinite(coordinates)):
-                raise ValueError(
-                    f"{name} deve conter valores finitos"
-                )
+                raise ValueError(f"{name} deve conter valores finitos")
 
         for name, spacing in (
             ("dx", self.dx),
             ("dy", self.dy),
         ):
             if not np.isscalar(spacing):
-                raise TypeError(
-                    f"{name} deve ser um escalar"
-                )
+                raise TypeError(f"{name} deve ser um escalar")
 
             if not np.isfinite(spacing) or spacing <= 0:
-                raise ValueError(
-                    f"{name} deve ser finito e positivo"
-                )
+                raise ValueError(f"{name} deve ser finito e positivo")
 
         if not np.allclose(
             np.diff(self.x),
@@ -64,9 +52,7 @@ class CartesianGrid:
             rtol=1e-12,
             atol=1e-14,
         ):
-            raise ValueError(
-                "Coordenadas x incompatíveis com dx"
-            )
+            raise ValueError("Coordenadas x incompatíveis com dx")
 
         if not np.allclose(
             np.diff(self.y),
@@ -74,9 +60,7 @@ class CartesianGrid:
             rtol=1e-12,
             atol=1e-14,
         ):
-            raise ValueError(
-                "Coordenadas y incompatíveis com dy"
-            )
+            raise ValueError("Coordenadas y incompatíveis com dy")
 
     @property
     def nx(self) -> int:

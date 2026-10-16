@@ -1,4 +1,3 @@
-
 """Diagnósticos espaciais de consistência centro-face para FDM."""
 
 from dataclasses import dataclass
@@ -37,9 +36,7 @@ def calculate_consistency(
     """
 
     if grid.nx < 3 or grid.ny < 3:
-        raise ValueError(
-            "O diagnóstico exige nx >= 3 e ny >= 3."
-        )
+        raise ValueError("O diagnóstico exige nx >= 3 e ny >= 3.")
 
     for name, field, shape in (
         ("u", state.u, grid.scalar_shape),
@@ -50,12 +47,8 @@ def calculate_consistency(
     ):
         _check_field(field, shape, name)
 
-    u_from_faces = 0.5 * (
-        state.u_faces[:, :-1] + state.u_faces[:, 1:]
-    )
-    v_from_faces = 0.5 * (
-        state.v_faces[:-1, :] + state.v_faces[1:, :]
-    )
+    u_from_faces = 0.5 * (state.u_faces[:, :-1] + state.u_faces[:, 1:])
+    v_from_faces = 0.5 * (state.v_faces[:-1, :] + state.v_faces[1:, :])
 
     error_u = state.u - u_from_faces
     error_v = state.v - v_from_faces
@@ -70,12 +63,8 @@ def calculate_consistency(
     max_u = float(np.max(np.abs(state.u)))
     max_v = float(np.max(np.abs(state.v)))
 
-    u_relative = (
-        100.0 * u_total / max_u if max_u > 0.0 else 0.0
-    )
-    v_relative = (
-        100.0 * v_total / max_v if max_v > 0.0 else 0.0
-    )
+    u_relative = 100.0 * u_total / max_u if max_u > 0.0 else 0.0
+    v_relative = 100.0 * v_total / max_v if max_v > 0.0 else 0.0
 
     return ConsistencyDiagnostics(
         u_total=u_total,

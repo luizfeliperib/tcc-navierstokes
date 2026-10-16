@@ -1,4 +1,3 @@
-
 """Verificacao do solver de Poisson por solucao manufaturada.
 
 Problema:
@@ -52,10 +51,7 @@ def manufactured_solution(
     lx = grid.nx * grid.dx
     ly = grid.ny * grid.dy
 
-    return (
-        np.cos(np.pi * x / lx)
-        * np.cos(np.pi * y / ly)
-    )
+    return np.cos(np.pi * x / lx) * np.cos(np.pi * y / ly)
 
 
 def manufactured_source(
@@ -66,9 +62,7 @@ def manufactured_source(
     lx = grid.nx * grid.dx
     ly = grid.ny * grid.dy
 
-    eigenvalue = np.pi**2 * (
-        1.0 / lx**2 + 1.0 / ly**2
-    )
+    eigenvalue = np.pi**2 * (1.0 / lx**2 + 1.0 / ly**2)
 
     return eigenvalue * manufactured_solution(grid)
 
@@ -88,17 +82,12 @@ def calculate_errors(
     if numerical.ndim != 2 or numerical.size == 0:
         raise ValueError("Campos devem ser matrizes nao vazias")
 
-    if not (
-        np.all(np.isfinite(numerical))
-        and np.all(np.isfinite(exact))
-    ):
+    if not (np.all(np.isfinite(numerical)) and np.all(np.isfinite(exact))):
         raise ValueError("Campos devem conter valores finitos")
 
     difference = numerical - exact
 
-    l2_error = float(
-        np.linalg.norm(difference) / np.sqrt(difference.size)
-    )
+    l2_error = float(np.linalg.norm(difference) / np.sqrt(difference.size))
 
     linf_error = float(np.max(np.abs(difference)))
 
@@ -120,18 +109,10 @@ def observed_order(
     ):
         raise ValueError("Erros devem ser finitos e positivos")
 
-    if (
-        not np.isfinite(refinement_ratio)
-        or refinement_ratio <= 1
-    ):
-        raise ValueError(
-            "refinement_ratio deve ser finito e maior que 1"
-        )
+    if not np.isfinite(refinement_ratio) or refinement_ratio <= 1:
+        raise ValueError("refinement_ratio deve ser finito e maior que 1")
 
-    return float(
-        np.log(coarse_error / fine_error)
-        / np.log(refinement_ratio)
-    )
+    return float(np.log(coarse_error / fine_error) / np.log(refinement_ratio))
 
 
 def verify_poisson_solver(
@@ -145,9 +126,7 @@ def verify_poisson_solver(
 ) -> VerificationResult:
     """Resolve Poisson manufaturado e mede erros numericos."""
 
-    grid = create_grid(
-        SimulationConfig(nx=nx, ny=ny, lx=lx, ly=ly)
-    )
+    grid = create_grid(SimulationConfig(nx=nx, ny=ny, lx=lx, ly=ly))
 
     coefficients = assemble_poisson_coefficients(grid)
 
@@ -173,20 +152,13 @@ def verify_poisson_solver(
             f"iterations={result.iterations}"
         )
 
-    l2_error, linf_error = calculate_errors(
-        result.phi, exact
-    )
+    l2_error, linf_error = calculate_errors(result.phi, exact)
 
     # Erro algébrico: compara A(phi_numerica) com rhs.
-    algebraic_residual = (
-        rhs - apply_poisson_system(
-            result.phi, coefficients
-        )
-    )
+    algebraic_residual = rhs - apply_poisson_system(result.phi, coefficients)
 
     algebraic_error = float(
-        np.linalg.norm(algebraic_residual)
-        / np.sqrt(algebraic_residual.size)
+        np.linalg.norm(algebraic_residual) / np.sqrt(algebraic_residual.size)
     )
 
     return VerificationResult(

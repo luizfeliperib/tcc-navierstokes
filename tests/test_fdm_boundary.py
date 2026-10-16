@@ -7,9 +7,7 @@ from navierstokes.fdm.grid import initialize_fields
 
 
 def test_lid_driven_cavity_velocity_boundary_conditions():
-    config = SimulationConfig(
-        nx=11, ny=9, lid_velocity=1.5
-    )
+    config = SimulationConfig(nx=11, ny=9, lid_velocity=1.5)
 
     u, v, _ = initialize_fields(config)
 
@@ -19,9 +17,7 @@ def test_lid_driven_cavity_velocity_boundary_conditions():
     u_original = u.copy()
     v_original = v.copy()
 
-    u_ext, v_ext = apply_velocity_boundary_conditions(
-        u, v, config
-    )
+    u_ext, v_ext = apply_velocity_boundary_conditions(u, v, config)
 
     assert u_ext.shape == (11, 13)
     assert v_ext.shape == (11, 13)
@@ -31,12 +27,8 @@ def test_lid_driven_cavity_velocity_boundary_conditions():
     np.testing.assert_array_equal(v, v_original)
 
     # Os valores centrais devem ser preservados.
-    np.testing.assert_array_equal(
-        u_ext[1:-1, 1:-1], u
-    )
-    np.testing.assert_array_equal(
-        v_ext[1:-1, 1:-1], v
-    )
+    np.testing.assert_array_equal(u_ext[1:-1, 1:-1], u)
+    np.testing.assert_array_equal(v_ext[1:-1, 1:-1], v)
 
     # Parede inferior: velocidade nula.
     np.testing.assert_allclose(
@@ -90,6 +82,7 @@ def test_lid_driven_cavity_velocity_boundary_conditions():
         0.0,
         atol=1e-12,
     )
+
 
 def test_boundary_conditions_reject_wrong_field_shape():
     config = SimulationConfig(nx=11, ny=9)

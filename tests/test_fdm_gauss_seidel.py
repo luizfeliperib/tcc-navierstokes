@@ -1,4 +1,3 @@
-
 """Testes do solver Gauss-Seidel para Poisson (FDM-03).
 
 A = -L_h, com condicoes de Neumann homogeneas.
@@ -20,17 +19,26 @@ from navierstokes.fdm.poisson import (
 GRID_CASES = [
     pytest.param(5, 5, 1.0, 1.0, id="base-5x5"),
     pytest.param(
-        2, 2, 1.0, 1.0,
+        2,
+        2,
+        1.0,
+        1.0,
         marks=pytest.mark.extended,
         id="min-2x2",
     ),
     pytest.param(
-        7, 4, 2.0, 1.0,
+        7,
+        4,
+        2.0,
+        1.0,
         marks=pytest.mark.extended,
         id="rect-7x4",
     ),
     pytest.param(
-        12, 9, 1.0, 2.0,
+        12,
+        9,
+        1.0,
+        2.0,
         marks=pytest.mark.extended,
         id="rect-12x9",
     ),
@@ -38,29 +46,21 @@ GRID_CASES = [
 
 SEEDS = [
     pytest.param(42, id="base-seed"),
-    pytest.param(
-        7, marks=pytest.mark.extended, id="seed-7"
-    ),
-    pytest.param(
-        123, marks=pytest.mark.extended, id="seed-123"
-    ),
+    pytest.param(7, marks=pytest.mark.extended, id="seed-7"),
+    pytest.param(123, marks=pytest.mark.extended, id="seed-123"),
 ]
 
 
 def make_test_grid(nx, ny, lx, ly):
     """Cria uma malha cartesiana de teste."""
-    return create_grid(
-        SimulationConfig(nx=nx, ny=ny, lx=lx, ly=ly)
-    )
+    return create_grid(SimulationConfig(nx=nx, ny=ny, lx=lx, ly=ly))
 
 
 def make_known_problem(grid, seed=42):
     """Constroi A(phi_ref) = rhs com solucao conhecida."""
     coefficients = assemble_poisson_coefficients(grid)
 
-    phi_ref = np.random.default_rng(seed).normal(
-        size=grid.scalar_shape
-    )
+    phi_ref = np.random.default_rng(seed).normal(size=grid.scalar_shape)
     phi_ref -= np.mean(phi_ref)
 
     rhs = apply_poisson_system(phi_ref, coefficients)
@@ -75,13 +75,9 @@ def make_known_problem(grid, seed=42):
 
 @pytest.mark.parametrize("nx,ny,lx,ly", GRID_CASES)
 @pytest.mark.parametrize("seed", SEEDS)
-def test_recovers_known_discrete_solution(
-    nx, ny, lx, ly, seed
-):
+def test_recovers_known_discrete_solution(nx, ny, lx, ly, seed):
     grid = make_test_grid(nx, ny, lx, ly)
-    coefficients, phi_ref, rhs = make_known_problem(
-        grid, seed
-    )
+    coefficients, phi_ref, rhs = make_known_problem(grid, seed)
 
     result = solve_poisson_gauss_seidel(
         rhs,
@@ -107,9 +103,7 @@ def test_recovers_known_discrete_solution(
 
 
 @pytest.mark.parametrize("nx,ny,lx,ly", GRID_CASES)
-def test_reported_residual_matches_true_residual(
-    nx, ny, lx, ly
-):
+def test_reported_residual_matches_true_residual(nx, ny, lx, ly):
     grid = make_test_grid(nx, ny, lx, ly)
     coefficients, _, rhs = make_known_problem(grid)
 
@@ -120,33 +114,19 @@ def test_reported_residual_matches_true_residual(
         max_iterations=15_000,
     )
 
-    residual_field = (
-        rhs - apply_poisson_system(
-            result.phi, coefficients
-        )
-    )
-    true_residual = (
-        np.linalg.norm(residual_field) / np.sqrt(rhs.size)
-    )
+    residual_field = rhs - apply_poisson_system(result.phi, coefficients)
+    true_residual = np.linalg.norm(residual_field) / np.sqrt(rhs.size)
 
     assert result.converged
-    assert result.residual == pytest.approx(
-        true_residual, rel=1e-12, abs=1e-12
-    )
+    assert result.residual == pytest.approx(true_residual, rel=1e-12, abs=1e-12)
 
-    assert len(result.residual_history) == (
-        result.iterations + 1
-    )
-    assert result.residual_history[-1] == pytest.approx(
-        result.residual
-    )
+    assert len(result.residual_history) == (result.iterations + 1)
+    assert result.residual_history[-1] == pytest.approx(result.residual)
     assert result.residual <= 1e-8
 
 
 @pytest.mark.parametrize("nx,ny,lx,ly", GRID_CASES)
-def test_residual_reduces_from_initial_value(
-    nx, ny, lx, ly
-):
+def test_residual_reduces_from_initial_value(nx, ny, lx, ly):
     grid = make_test_grid(nx, ny, lx, ly)
     coefficients, _, rhs = make_known_problem(grid)
 
@@ -159,10 +139,7 @@ def test_residual_reduces_from_initial_value(
 
     assert result.converged
     assert result.residual_history[0] > 0
-    assert (
-        result.residual_history[-1]
-        < result.residual_history[0]
-    )
+    assert result.residual_history[-1] < result.residual_history[0]
 
 
 # ============================================================
@@ -183,21 +160,15 @@ def test_solution_has_zero_mean(nx, ny, lx, ly):
     )
 
     assert result.converged
-    assert np.mean(result.phi) == pytest.approx(
-        0.0, abs=1e-12
-    )
+    assert np.mean(result.phi) == pytest.approx(0.0, abs=1e-12)
 
 
 @pytest.mark.parametrize("nx,ny,lx,ly", GRID_CASES)
-def test_initial_constant_shift_does_not_change_solution(
-    nx, ny, lx, ly
-):
+def test_initial_constant_shift_does_not_change_solution(nx, ny, lx, ly):
     grid = make_test_grid(nx, ny, lx, ly)
     coefficients, _, rhs = make_known_problem(grid)
 
-    initial = np.random.default_rng(11).normal(
-        size=grid.scalar_shape
-    )
+    initial = np.random.default_rng(11).normal(size=grid.scalar_shape)
 
     first = solve_poisson_gauss_seidel(
         rhs,
@@ -238,9 +209,7 @@ def test_rejects_incompatible_rhs(nx, ny, lx, ly):
 
     rhs = np.ones(grid.scalar_shape)
 
-    with pytest.raises(
-        ValueError, match="incompat"
-    ):
+    with pytest.raises(ValueError, match="incompat"):
         solve_poisson_gauss_seidel(rhs, coefficients)
 
 
@@ -265,26 +234,20 @@ def test_accepts_compatible_rhs(nx, ny, lx, ly):
 
 
 @pytest.mark.parametrize("nx,ny,lx,ly", GRID_CASES)
-def test_zero_rhs_converges_without_iterations(
-    nx, ny, lx, ly
-):
+def test_zero_rhs_converges_without_iterations(nx, ny, lx, ly):
     grid = make_test_grid(nx, ny, lx, ly)
     coefficients = assemble_poisson_coefficients(grid)
 
     rhs = np.zeros(grid.scalar_shape)
 
-    result = solve_poisson_gauss_seidel(
-        rhs, coefficients
-    )
+    result = solve_poisson_gauss_seidel(rhs, coefficients)
 
     assert result.converged
     assert result.iterations == 0
     assert result.residual == pytest.approx(0.0)
     assert len(result.residual_history) == 1
 
-    np.testing.assert_array_equal(
-        result.phi, np.zeros(grid.scalar_shape)
-    )
+    np.testing.assert_array_equal(result.phi, np.zeros(grid.scalar_shape))
 
 
 # ============================================================
@@ -293,9 +256,7 @@ def test_zero_rhs_converges_without_iterations(
 
 
 @pytest.mark.parametrize("nx,ny,lx,ly", GRID_CASES)
-def test_reports_nonconvergence_at_iteration_limit(
-    nx, ny, lx, ly
-):
+def test_reports_nonconvergence_at_iteration_limit(nx, ny, lx, ly):
     grid = make_test_grid(nx, ny, lx, ly)
     coefficients, _, rhs = make_known_problem(grid)
 
@@ -322,9 +283,7 @@ def test_rejects_invalid_rhs_shape():
     coefficients = assemble_poisson_coefficients(grid)
 
     with pytest.raises(ValueError, match="Shape"):
-        solve_poisson_gauss_seidel(
-            np.zeros((4, 5)), coefficients
-        )
+        solve_poisson_gauss_seidel(np.zeros((4, 5)), coefficients)
 
 
 def test_rejects_nonfinite_rhs():
@@ -343,11 +302,13 @@ def test_rejects_nonfinite_rhs():
     [
         pytest.param(0.0, id="zero"),
         pytest.param(
-            -1e-5, marks=pytest.mark.extended,
+            -1e-5,
+            marks=pytest.mark.extended,
             id="negative",
         ),
         pytest.param(
-            np.nan, marks=pytest.mark.extended,
+            np.nan,
+            marks=pytest.mark.extended,
             id="nan",
         ),
     ],
@@ -369,18 +330,18 @@ def test_rejects_invalid_tolerance(tolerance):
     [
         pytest.param(0, id="zero"),
         pytest.param(
-            -1, marks=pytest.mark.extended,
+            -1,
+            marks=pytest.mark.extended,
             id="negative",
         ),
         pytest.param(
-            1.5, marks=pytest.mark.extended,
+            1.5,
+            marks=pytest.mark.extended,
             id="fractional",
         ),
     ],
 )
-def test_rejects_invalid_max_iterations(
-    max_iterations
-):
+def test_rejects_invalid_max_iterations(max_iterations):
     grid = make_test_grid(5, 5, 1.0, 1.0)
     coefficients = assemble_poisson_coefficients(grid)
 
@@ -424,14 +385,13 @@ def test_rejects_nonfinite_initial_phi():
     [
         pytest.param(-1.0, id="negative"),
         pytest.param(
-            np.nan, marks=pytest.mark.extended,
+            np.nan,
+            marks=pytest.mark.extended,
             id="nan",
         ),
     ],
 )
-def test_rejects_invalid_compatibility_tolerance(
-    compatibility_tolerance
-):
+def test_rejects_invalid_compatibility_tolerance(compatibility_tolerance):
     grid = make_test_grid(5, 5, 1.0, 1.0)
     coefficients = assemble_poisson_coefficients(grid)
 
@@ -452,9 +412,7 @@ def test_solver_does_not_modify_input_arrays():
     grid = make_test_grid(5, 5, 1.0, 1.0)
     coefficients, _, rhs = make_known_problem(grid)
 
-    initial = np.random.default_rng(22).normal(
-        size=grid.scalar_shape
-    )
+    initial = np.random.default_rng(22).normal(size=grid.scalar_shape)
 
     rhs_before = rhs.copy()
     initial_before = initial.copy()
@@ -468,9 +426,7 @@ def test_solver_does_not_modify_input_arrays():
     )
 
     np.testing.assert_array_equal(rhs, rhs_before)
-    np.testing.assert_array_equal(
-        initial, initial_before
-    )
+    np.testing.assert_array_equal(initial, initial_before)
 
 
 # ============================================================
@@ -568,4 +524,3 @@ def test_approximately_compatible_rhs_converges_if_tolerance_allows():
     assert result.converged
     assert result.residual <= 1e-6
     assert abs(np.mean(result.phi)) < 1e-12
-

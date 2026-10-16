@@ -1,4 +1,3 @@
-
 """FDM-06.6: diagnósticos de conservação e consistência."""
 
 from dataclasses import dataclass
@@ -36,32 +35,18 @@ def calculate_diagnostics(
     ):
         _check_field(field, shape, name)
 
-    divergence = divergence_faces(
-        state.u_faces, state.v_faces, grid
-    )
+    divergence = divergence_faces(state.u_faces, state.v_faces, grid)
 
     # Interpolação apenas para diagnóstico.
     # Não substitui os fluxos projetados do estado.
-    u_interpolated = 0.5 * (
-        state.u_faces[:, :-1] + state.u_faces[:, 1:]
-    )
-    v_interpolated = 0.5 * (
-        state.v_faces[:-1, :] + state.v_faces[1:, :]
-    )
+    u_interpolated = 0.5 * (state.u_faces[:, :-1] + state.u_faces[:, 1:])
+    v_interpolated = 0.5 * (state.v_faces[:-1, :] + state.v_faces[1:, :])
 
     return FlowDiagnostics(
-        divergence_rms=float(
-            np.sqrt(np.mean(divergence**2))
-        ),
-        center_face_u_rms=float(
-            np.sqrt(np.mean((state.u - u_interpolated)**2))
-        ),
-        center_face_v_rms=float(
-            np.sqrt(np.mean((state.v - v_interpolated)**2))
-        ),
+        divergence_rms=float(np.sqrt(np.mean(divergence**2))),
+        center_face_u_rms=float(np.sqrt(np.mean((state.u - u_interpolated) ** 2))),
+        center_face_v_rms=float(np.sqrt(np.mean((state.v - v_interpolated) ** 2))),
         max_abs_u=float(np.max(np.abs(state.u))),
         max_abs_v=float(np.max(np.abs(state.v))),
-        kinetic_energy_mean=float(
-            0.5 * np.mean(state.u**2 + state.v**2)
-        ),
+        kinetic_energy_mean=float(0.5 * np.mean(state.u**2 + state.v**2)),
     )

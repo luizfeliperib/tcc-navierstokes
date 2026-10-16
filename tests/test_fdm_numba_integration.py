@@ -1,4 +1,3 @@
-
 """Testa a equivalencia de passos temporais com Python e Numba."""
 
 import numpy as np

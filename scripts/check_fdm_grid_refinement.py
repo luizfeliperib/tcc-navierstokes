@@ -1,4 +1,3 @@
-
 """FDM-06.6: estudo exploratorio de refinamento de malha."""
 
 import csv
@@ -43,7 +42,7 @@ def initialize_state(grid) -> FlowState:
 
 def run_case(size: int) -> dict:
     """Executa um caso e salva seu historico em CSV."""
-    
+
     start = perf_counter()
     config = SimulationConfig(
         nx=size,
@@ -124,23 +123,13 @@ def run_case(size: int) -> dict:
                 "v_total": consistency.v_total,
                 "v_interior": consistency.v_interior,
                 "v_boundary": consistency.v_boundary,
-                "u_relative_percent": (
-                    consistency.u_relative_percent
-                ),
-                "v_relative_percent": (
-                    consistency.v_relative_percent
-                ),
+                "u_relative_percent": (consistency.u_relative_percent),
+                "v_relative_percent": (consistency.v_relative_percent),
                 "max_abs_u": float(np.max(np.abs(state.u))),
                 "max_abs_v": float(np.max(np.abs(state.v))),
-                "kinetic_energy_mean": float(
-                    0.5 * np.mean(state.u**2 + state.v**2)
-                ),
-                "poisson_iterations": (
-                    result.pressure_result.iterations
-                ),
-                "poisson_residual": (
-                    result.pressure_result.residual
-                ),
+                "kinetic_energy_mean": float(0.5 * np.mean(state.u**2 + state.v**2)),
+                "poisson_iterations": (result.pressure_result.iterations),
+                "poisson_residual": (result.pressure_result.residual),
             }
 
             writer.writerow(row)
@@ -148,8 +137,7 @@ def run_case(size: int) -> dict:
 
             if step % 100 == 0:
                 print(
-                    f"Malha {size}x{size}: "
-                    f"{step}/{NUMBER_OF_STEPS} passos",
+                    f"Malha {size}x{size}: {step}/{NUMBER_OF_STEPS} passos",
                     file=sys.stderr,
                 )
     elapsed = perf_counter() - start
