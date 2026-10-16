@@ -1,6 +1,7 @@
 """Solver Gauss-Seidel para Poisson com Neumann homogenea."""
 
 from dataclasses import dataclass
+from typing import Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -28,6 +29,7 @@ def solve_poisson_gauss_seidel(
     max_iterations: int = 10_000,
     initial_phi: NDArray[np.float64] | None = None,
     compatibility_tolerance: float = 1e-10,
+    backend: Literal["python", "numba"] = "python",
 ) -> GaussSeidelResult:
     """Resolve A phi = rhs usando Gauss-Seidel lexicografico.
 
@@ -55,14 +57,10 @@ def solve_poisson_gauss_seidel(
         or max_iterations < 1
     ):
         raise ValueError("max_iterations deve ser inteiro positivo")
-
-    if (
-        not np.isfinite(compatibility_tolerance)
-        or compatibility_tolerance < 0
-    ):
-        raise ValueError(
-            "compatibility_tolerance deve ser finita e nao negativa"
-        )
+    if backend not in ("python", "numba"):
+        raise ValueError("backend deve ser 'python' ou 'numba'")
+    if not np.isfinite(compatibility_tolerance) or compatibility_tolerance < 0:
+        raise ValueError("compatibility_tolerance deve ser finita e nao negativa")
 
     # Como a malha e uniforme, soma(rhs) = 0 equivale a media(rhs) = 0.
     # A escala evita comparar um erro de arredondamento absoluto
@@ -86,15 +84,28 @@ def solve_poisson_gauss_seidel(
             raise ValueError("initial_phi deve ser finito")
         phi = initial_phi.copy()
 
+    for name, array in (
+        ("center", coefficients.center),
+        ("east", coefficients.east),
+        ("west", coefficients.west),
+        ("north", coefficients.north),
+        ("south", coefficients.south),
+    ):
+        if array.shape != shape:
+            raise ValueError(f"Shape de {name} incompatível")
+        if not np.all(np.isfinite(array)):
+            raise ValueError(f"{name} deve conter valores finitos")
+
+    if np.any(coefficients.center <= 0):
+        raise ValueError("Diagonal de Poisson inválida")
+
     # Fixa o representante da familia de solucoes.
     phi -= np.mean(phi)
 
     ny, nx = shape
 
     def true_residual() -> float:
-        residual_field = rhs - apply_poisson_system(
-            phi, coefficients
-        )
+        residual_field = rhs - apply_poisson_system(phi, coefficients)
 
         with np.errstate(over="ignore", invalid="ignore"):
             residual = np.linalg.norm(residual_field)
@@ -117,36 +128,43 @@ def solve_poisson_gauss_seidel(
             residual_history=tuple(history),
         )
 
+    if backend == "numba":
+        try:
+            from navierstokes.fdm.gauss_seidel_numba import (
+                gauss_seidel_sweep,
+            )
+        except ImportError as exc:
+            raise ImportError(
+                "O backend Numba exige instalar o extra "
+                "'performance': pip install -e '.[performance]'"
+            ) from exc
+
     for iteration in range(1, max_iterations + 1):
-        for j in range(ny):
-            for i in range(nx):
-                diagonal = coefficients.center[j, i]
+        if backend == "numba":
+            gauss_seidel_sweep(
+                phi,
+                rhs,
+                coefficients.center,
+                coefficients.east,
+                coefficients.west,
+                coefficients.north,
+                coefficients.south,
+            )
+        else:
+            for j in range(ny):
+                for i in range(nx):
+                    neighbor_sum = 0.0
 
-                if diagonal <= 0 or not np.isfinite(diagonal):
-                    raise ValueError("Diagonal de Poisson inválida")
+                    if i + 1 < nx:
+                        neighbor_sum += coefficients.east[j, i] * phi[j, i + 1]
+                    if i > 0:
+                        neighbor_sum += coefficients.west[j, i] * phi[j, i - 1]
+                    if j + 1 < ny:
+                        neighbor_sum += coefficients.north[j, i] * phi[j + 1, i]
+                    if j > 0:
+                        neighbor_sum += coefficients.south[j, i] * phi[j - 1, i]
 
-                neighbor_sum = 0.0
-
-                if i + 1 < nx:
-                    neighbor_sum += (
-                        coefficients.east[j, i] * phi[j, i + 1]
-                    )
-                if i > 0:
-                    neighbor_sum += (
-                        coefficients.west[j, i] * phi[j, i - 1]
-                    )
-                if j + 1 < ny:
-                    neighbor_sum += (
-                        coefficients.north[j, i] * phi[j + 1, i]
-                    )
-                if j > 0:
-                    neighbor_sum += (
-                        coefficients.south[j, i] * phi[j - 1, i]
-                    )
-
-                phi[j, i] = (
-                    rhs[j, i] + neighbor_sum
-                ) / diagonal
+                    phi[j, i] = (rhs[j, i] + neighbor_sum) / coefficients.center[j, i]
 
         # Remover a media nao altera A(phi), pois A(1) = 0.
         phi -= np.mean(phi)
@@ -155,9 +173,7 @@ def solve_poisson_gauss_seidel(
         history.append(residual)
 
         if not np.isfinite(residual):
-            raise FloatingPointError(
-                "Residuo nao finito durante Gauss-Seidel"
-            )
+            raise FloatingPointError("Residuo nao finito durante Gauss-Seidel")
 
         if residual <= tolerance:
             return GaussSeidelResult(

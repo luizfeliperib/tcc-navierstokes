@@ -26,7 +26,10 @@ def _check_geometry(grid: CartesianGrid, config: SimulationConfig) -> None:
 
 
 def convection_upwind(
-    u: NDArray, v: NDArray, u_faces: NDArray, v_faces: NDArray,
+    u: NDArray,
+    v: NDArray,
+    u_faces: NDArray,
+    v_faces: NDArray,
     grid: CartesianGrid,
 ) -> tuple[NDArray, NDArray]:
     """Divergência de (u*u, v*u) e (u*v, v*v), com upwind nas faces.
@@ -34,13 +37,16 @@ def convection_upwind(
     Fluxos normais nas faces externas devem ser nulos (cavidade fechada).
     """
     for name, arr, shape in (
-        ("u", u, grid.scalar_shape), ("v", v, grid.scalar_shape),
+        ("u", u, grid.scalar_shape),
+        ("v", v, grid.scalar_shape),
         ("u_faces", u_faces, grid.u_face_shape),
         ("v_faces", v_faces, grid.v_face_shape),
     ):
         _check_field(arr, shape, name)
-    if not (np.allclose(u_faces[:, [0, -1]], 0, atol=1e-14, rtol=0)
-            and np.allclose(v_faces[[0, -1], :], 0, atol=1e-14, rtol=0)):
+    if not (
+        np.allclose(u_faces[:, [0, -1]], 0, atol=1e-14, rtol=0)
+        and np.allclose(v_faces[[0, -1], :], 0, atol=1e-14, rtol=0)
+    ):
         raise ValueError("Cavidade impermeável exige fluxos normais externos nulos")
 
     # Fluxos de u: componente transportada upwind em faces verticais/horizontais.
@@ -61,12 +67,17 @@ def convection_upwind(
     flux_vy[1:-1, :] = v_faces[1:-1, :] * np.where(
         v_faces[1:-1, :] >= 0, v[:-1, :], v[1:, :]
     )
-    return (divergence_faces(flux_ux, flux_uy, grid),
-            divergence_faces(flux_vx, flux_vy, grid))
+    return (
+        divergence_faces(flux_ux, flux_uy, grid),
+        divergence_faces(flux_vx, flux_vy, grid),
+    )
 
 
 def velocity_laplacian(
-    u: NDArray, v: NDArray, grid: CartesianGrid, config: SimulationConfig,
+    u: NDArray,
+    v: NDArray,
+    grid: CartesianGrid,
+    config: SimulationConfig,
 ) -> tuple[NDArray, NDArray]:
     """Laplacianos centrais de 5 pontos com Dirichlet via ghost cells."""
     _check_geometry(grid, config)
@@ -76,15 +87,19 @@ def velocity_laplacian(
 
     def lap(a: NDArray) -> NDArray:
         core = a[1:-1, 1:-1]
-        return ((a[1:-1, 2:] - 2 * core + a[1:-1, :-2]) / grid.dx**2
-                + (a[2:, 1:-1] - 2 * core + a[:-2, 1:-1]) / grid.dy**2)
+        return (a[1:-1, 2:] - 2 * core + a[1:-1, :-2]) / grid.dx**2 + (
+            a[2:, 1:-1] - 2 * core + a[:-2, 1:-1]
+        ) / grid.dy**2
 
     return lap(u_ext), lap(v_ext)
 
 
 def stable_timestep_limit(
-    u_faces: NDArray, v_faces: NDArray, grid: CartesianGrid,
-    viscosity: float, safety_factor: float = 0.8,
+    u_faces: NDArray,
+    v_faces: NDArray,
+    grid: CartesianGrid,
+    viscosity: float,
+    safety_factor: float = 0.8,
 ) -> float:
     """Limite suficiente conservador para advecção upwind + difusão explícita.
 
@@ -104,8 +119,12 @@ def stable_timestep_limit(
 
 
 def velocity_predictor(
-    u: NDArray, v: NDArray, u_faces: NDArray, v_faces: NDArray,
-    grid: CartesianGrid, config: SimulationConfig,
+    u: NDArray,
+    v: NDArray,
+    u_faces: NDArray,
+    v_faces: NDArray,
+    grid: CartesianGrid,
+    config: SimulationConfig,
 ) -> tuple[NDArray, NDArray]:
     """Preditor não incremental por Euler explícito; não projeta nem resolve p."""
     _check_geometry(grid, config)

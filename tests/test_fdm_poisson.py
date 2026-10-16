@@ -1,4 +1,3 @@
-
 """Testes do sistema discreto de Poisson — FDM-02.
 
 Convencao: A = -L_h = -D_h G_h.
@@ -25,17 +24,26 @@ from navierstokes.fdm.poisson import (
 GRID_CASES = [
     pytest.param(8, 6, 2.0, 1.0, id="base-8x6"),
     pytest.param(
-        2, 2, 1.0, 1.0,
+        2,
+        2,
+        1.0,
+        1.0,
         marks=pytest.mark.extended,
         id="min-2x2",
     ),
     pytest.param(
-        3, 5, 1.0, 2.0,
+        3,
+        5,
+        1.0,
+        2.0,
         marks=pytest.mark.extended,
         id="rect-3x5",
     ),
     pytest.param(
-        16, 12, 1.0, 1.0,
+        16,
+        12,
+        1.0,
+        1.0,
         marks=pytest.mark.extended,
         id="large-16x12",
     ),
@@ -43,33 +51,21 @@ GRID_CASES = [
 
 SEEDS = [
     pytest.param(42, id="base-seed"),
-    pytest.param(
-        7, marks=pytest.mark.extended, id="seed-7"
-    ),
-    pytest.param(
-        123, marks=pytest.mark.extended, id="seed-123"
-    ),
+    pytest.param(7, marks=pytest.mark.extended, id="seed-7"),
+    pytest.param(123, marks=pytest.mark.extended, id="seed-123"),
 ]
 
 CONSTANTS = [
     pytest.param(7.0, id="base-constant"),
-    pytest.param(
-        0.0, marks=pytest.mark.extended, id="zero"
-    ),
-    pytest.param(
-        1.0, marks=pytest.mark.extended, id="one"
-    ),
-    pytest.param(
-        -3.0, marks=pytest.mark.extended, id="negative"
-    ),
+    pytest.param(0.0, marks=pytest.mark.extended, id="zero"),
+    pytest.param(1.0, marks=pytest.mark.extended, id="one"),
+    pytest.param(-3.0, marks=pytest.mark.extended, id="negative"),
 ]
 
 
 def make_test_grid(nx, ny, lx, ly):
     """Cria uma malha cartesiana para os testes."""
-    return create_grid(
-        SimulationConfig(nx=nx, ny=ny, lx=lx, ly=ly)
-    )
+    return create_grid(SimulationConfig(nx=nx, ny=ny, lx=lx, ly=ly))
 
 
 # ============================================================
@@ -79,16 +75,12 @@ def make_test_grid(nx, ny, lx, ly):
 
 @pytest.mark.parametrize("nx,ny,lx,ly", GRID_CASES)
 @pytest.mark.parametrize("seed", SEEDS)
-def test_assembled_system_matches_existing_laplacian(
-    nx, ny, lx, ly, seed
-):
+def test_assembled_system_matches_existing_laplacian(nx, ny, lx, ly, seed):
     """Verifica A(phi) = -L_h(phi)."""
     grid = make_test_grid(nx, ny, lx, ly)
     c = assemble_poisson_coefficients(grid)
 
-    phi = np.random.default_rng(seed).normal(
-        size=grid.scalar_shape
-    )
+    phi = np.random.default_rng(seed).normal(size=grid.scalar_shape)
 
     np.testing.assert_allclose(
         apply_poisson_system(phi, c),
@@ -114,9 +106,7 @@ def test_diagonal_coefficients_at_interior_edges_and_corners():
 
 
 @pytest.mark.parametrize("nx,ny,lx,ly", GRID_CASES)
-def test_boundary_directional_coefficients_are_zero(
-    nx, ny, lx, ly
-):
+def test_boundary_directional_coefficients_are_zero(nx, ny, lx, ly):
     """Nao ha conexoes para fora do dominio."""
     grid = make_test_grid(nx, ny, lx, ly)
     c = assemble_poisson_coefficients(grid)
@@ -128,31 +118,19 @@ def test_boundary_directional_coefficients_are_zero(
 
 
 @pytest.mark.parametrize("nx,ny,lx,ly", GRID_CASES)
-def test_interior_directional_coefficients(
-    nx, ny, lx, ly
-):
+def test_interior_directional_coefficients(nx, ny, lx, ly):
     """Confere coeficientes das conexoes internas."""
     grid = make_test_grid(nx, ny, lx, ly)
     c = assemble_poisson_coefficients(grid)
 
-    np.testing.assert_allclose(
-        c.east[:, :-1], 1.0 / grid.dx**2
-    )
-    np.testing.assert_allclose(
-        c.west[:, 1:], 1.0 / grid.dx**2
-    )
-    np.testing.assert_allclose(
-        c.north[:-1, :], 1.0 / grid.dy**2
-    )
-    np.testing.assert_allclose(
-        c.south[1:, :], 1.0 / grid.dy**2
-    )
+    np.testing.assert_allclose(c.east[:, :-1], 1.0 / grid.dx**2)
+    np.testing.assert_allclose(c.west[:, 1:], 1.0 / grid.dx**2)
+    np.testing.assert_allclose(c.north[:-1, :], 1.0 / grid.dy**2)
+    np.testing.assert_allclose(c.south[1:, :], 1.0 / grid.dy**2)
 
 
 @pytest.mark.parametrize("nx,ny,lx,ly", GRID_CASES)
-def test_diagonal_equals_sum_of_neighbor_coefficients(
-    nx, ny, lx, ly
-):
+def test_diagonal_equals_sum_of_neighbor_coefficients(nx, ny, lx, ly):
     """Diagonal igual a soma dos coeficientes vizinhos."""
     grid = make_test_grid(nx, ny, lx, ly)
     c = assemble_poisson_coefficients(grid)
@@ -173,9 +151,7 @@ def test_diagonal_equals_sum_of_neighbor_coefficients(
 
 
 @pytest.mark.parametrize("nx,ny,lx,ly", GRID_CASES)
-def test_poisson_coefficients_are_symmetric(
-    nx, ny, lx, ly
-):
+def test_poisson_coefficients_are_symmetric(nx, ny, lx, ly):
     """Conexoes entre celulas vizinhas sao reciprocas."""
     grid = make_test_grid(nx, ny, lx, ly)
     c = assemble_poisson_coefficients(grid)
@@ -196,20 +172,12 @@ def test_poisson_coefficients_are_symmetric(
 
 
 @pytest.mark.parametrize("nx,ny,lx,ly", GRID_CASES)
-def test_poisson_row_sums_are_zero(
-    nx, ny, lx, ly
-):
+def test_poisson_row_sums_are_zero(nx, ny, lx, ly):
     """Verifica A(1) = 0 pela soma dos coeficientes."""
     grid = make_test_grid(nx, ny, lx, ly)
     c = assemble_poisson_coefficients(grid)
 
-    row_sum = (
-        c.center
-        - c.east
-        - c.west
-        - c.north
-        - c.south
-    )
+    row_sum = c.center - c.east - c.west - c.north - c.south
 
     np.testing.assert_allclose(
         row_sum,
@@ -221,16 +189,12 @@ def test_poisson_row_sums_are_zero(
 
 @pytest.mark.parametrize("nx,ny,lx,ly", GRID_CASES)
 @pytest.mark.parametrize("seed", SEEDS)
-def test_poisson_global_conservation(
-    nx, ny, lx, ly, seed
-):
+def test_poisson_global_conservation(nx, ny, lx, ly, seed):
     """A integral discreta de A(phi) deve ser zero."""
     grid = make_test_grid(nx, ny, lx, ly)
     c = assemble_poisson_coefficients(grid)
 
-    phi = np.random.default_rng(seed).normal(
-        size=grid.scalar_shape
-    )
+    phi = np.random.default_rng(seed).normal(size=grid.scalar_shape)
     a_phi = apply_poisson_system(phi, c)
 
     integral = np.sum(a_phi) * grid.cell_area
@@ -250,9 +214,7 @@ def test_poisson_global_conservation(
 
 @pytest.mark.parametrize("nx,ny,lx,ly", GRID_CASES)
 @pytest.mark.parametrize("constant", CONSTANTS)
-def test_constant_field_is_in_nullspace(
-    nx, ny, lx, ly, constant
-):
+def test_constant_field_is_in_nullspace(nx, ny, lx, ly, constant):
     """Campos constantes pertencem ao nucleo de A."""
     grid = make_test_grid(nx, ny, lx, ly)
     c = assemble_poisson_coefficients(grid)
@@ -268,16 +230,12 @@ def test_constant_field_is_in_nullspace(
 
 
 @pytest.mark.parametrize("nx,ny,lx,ly", GRID_CASES)
-def test_poisson_constant_shift_invariance(
-    nx, ny, lx, ly
-):
+def test_poisson_constant_shift_invariance(nx, ny, lx, ly):
     """Adicionar constante nao modifica A(phi)."""
     grid = make_test_grid(nx, ny, lx, ly)
     c = assemble_poisson_coefficients(grid)
 
-    phi = np.random.default_rng(99).normal(
-        size=grid.scalar_shape
-    )
+    phi = np.random.default_rng(99).normal(size=grid.scalar_shape)
 
     original = apply_poisson_system(phi, c)
     shifted = apply_poisson_system(phi + 3.0, c)
@@ -297,28 +255,20 @@ def test_poisson_constant_shift_invariance(
 
 @pytest.mark.parametrize("nx,ny,lx,ly", GRID_CASES)
 @pytest.mark.parametrize("seed", SEEDS)
-def test_poisson_discrete_energy_identity(
-    nx, ny, lx, ly, seed
-):
+def test_poisson_discrete_energy_identity(nx, ny, lx, ly, seed):
     """Verifica <phi,A(phi)>_h = ||G_h(phi)||_h^2."""
     grid = make_test_grid(nx, ny, lx, ly)
     c = assemble_poisson_coefficients(grid)
 
-    phi = np.random.default_rng(seed).normal(
-        size=grid.scalar_shape
-    )
+    phi = np.random.default_rng(seed).normal(size=grid.scalar_shape)
 
     a_phi = apply_poisson_system(phi, c)
 
-    energy_operator = (
-        np.sum(phi * a_phi) * grid.cell_area
-    )
+    energy_operator = np.sum(phi * a_phi) * grid.cell_area
 
     gx, gy = gradient_faces(phi, grid)
 
-    energy_gradient = (
-        np.sum(gx**2) + np.sum(gy**2)
-    ) * grid.cell_area
+    energy_gradient = (np.sum(gx**2) + np.sum(gy**2)) * grid.cell_area
 
     np.testing.assert_allclose(
         energy_operator,

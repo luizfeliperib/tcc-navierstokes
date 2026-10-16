@@ -23,23 +23,25 @@ from navierstokes.fdm.verification import (
     [
         pytest.param(8, 8, 1.0, 1.0, id="square"),
         pytest.param(
-            12, 8, 2.0, 1.0,
+            12,
+            8,
+            2.0,
+            1.0,
             marks=pytest.mark.extended,
             id="rectangle",
         ),
         pytest.param(
-            16, 12, 1.0, 2.0,
+            16,
+            12,
+            1.0,
+            2.0,
             marks=pytest.mark.extended,
             id="anisotropic",
         ),
     ],
 )
-def test_manufactured_solution_has_zero_mean(
-    nx, ny, lx, ly
-):
-    grid = create_grid(
-        SimulationConfig(nx=nx, ny=ny, lx=lx, ly=ly)
-    )
+def test_manufactured_solution_has_zero_mean(nx, ny, lx, ly):
+    grid = create_grid(SimulationConfig(nx=nx, ny=ny, lx=lx, ly=ly))
 
     exact = manufactured_solution(grid)
     rhs = manufactured_source(grid)
@@ -55,28 +57,25 @@ def test_manufactured_solution_has_zero_mean(
     [
         pytest.param(8, 8, 1.0, 1.0, id="square"),
         pytest.param(
-            12, 8, 2.0, 1.0,
+            12,
+            8,
+            2.0,
+            1.0,
             marks=pytest.mark.extended,
             id="rectangle",
         ),
     ],
 )
-def test_manufactured_solution_is_discrete_eigenmode(
-    nx, ny, lx, ly
-):
+def test_manufactured_solution_is_discrete_eigenmode(nx, ny, lx, ly):
     """Verifica a identidade discreta independentemente do solver."""
-    grid = create_grid(
-        SimulationConfig(nx=nx, ny=ny, lx=lx, ly=ly)
-    )
+    grid = create_grid(SimulationConfig(nx=nx, ny=ny, lx=lx, ly=ly))
 
     coefficients = assemble_poisson_coefficients(grid)
     exact = manufactured_solution(grid)
 
     discrete_eigenvalue = (
-        4.0 / grid.dx**2
-        * np.sin(np.pi / (2 * nx)) ** 2
-        + 4.0 / grid.dy**2
-        * np.sin(np.pi / (2 * ny)) ** 2
+        4.0 / grid.dx**2 * np.sin(np.pi / (2 * nx)) ** 2
+        + 4.0 / grid.dy**2 * np.sin(np.pi / (2 * ny)) ** 2
     )
 
     np.testing.assert_allclose(
@@ -89,9 +88,7 @@ def test_manufactured_solution_is_discrete_eigenmode(
 
 def test_error_norms():
     exact = np.zeros((2, 2))
-    numerical = np.array(
-        [[1.0, -1.0], [0.0, 0.0]]
-    )
+    numerical = np.array([[1.0, -1.0], [0.0, 0.0]])
 
     l2, linf = calculate_errors(numerical, exact)
 
@@ -134,9 +131,7 @@ def test_observed_order():
         (np.nan, 0.01, 2.0),
     ],
 )
-def test_observed_order_rejects_invalid_values(
-    coarse, fine, ratio
-):
+def test_observed_order_rejects_invalid_values(coarse, fine, ratio):
     with pytest.raises(ValueError):
         observed_order(coarse, fine, ratio)
 
@@ -172,13 +167,9 @@ def test_spatial_refinement_second_order():
     assert fine.l2_error < coarse.l2_error
     assert fine.linf_error < coarse.linf_error
 
-    order_l2 = observed_order(
-        coarse.l2_error, fine.l2_error
-    )
+    order_l2 = observed_order(coarse.l2_error, fine.l2_error)
 
-    order_linf = observed_order(
-        coarse.linf_error, fine.linf_error
-    )
+    order_linf = observed_order(coarse.linf_error, fine.linf_error)
 
     assert 1.8 < order_l2 < 2.2
     assert 1.8 < order_linf < 2.2
@@ -208,18 +199,14 @@ def test_rectangular_domain_refinement():
     assert fine.l2_error < coarse.l2_error
     assert fine.linf_error < coarse.linf_error
 
-    order_l2 = observed_order(
-        coarse.l2_error, fine.l2_error
-    )
+    order_l2 = observed_order(coarse.l2_error, fine.l2_error)
 
     assert 1.7 < order_l2 < 2.3
 
 
 @pytest.mark.extended
 def test_solver_fails_explicitly_when_not_converged():
-    with pytest.raises(
-        RuntimeError, match="nao convergiu"
-    ):
+    with pytest.raises(RuntimeError, match="nao convergiu"):
         verify_poisson_solver(
             nx=8,
             ny=8,

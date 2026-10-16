@@ -1,4 +1,3 @@
-
 import numpy as np
 import pytest
 
@@ -14,11 +13,7 @@ from navierstokes.fdm.operators import (
 
 @pytest.fixture
 def grid():
-    return create_grid(
-        SimulationConfig(
-            nx=8, ny=6, lx=2.0, ly=1.0
-        )
-    )
+    return create_grid(SimulationConfig(nx=8, ny=6, lx=2.0, ly=1.0))
 
 
 def test_constant_field_has_zero_gradient(grid):
@@ -44,12 +39,8 @@ def test_linear_field_gradient_on_internal_faces(grid):
 
     gx, gy = gradient_faces(phi, grid)
 
-    np.testing.assert_allclose(
-        gx[:, 1:-1], 3.0, atol=1e-12
-    )
-    np.testing.assert_allclose(
-        gy[1:-1, :], -2.0, atol=1e-12
-    )
+    np.testing.assert_allclose(gx[:, 1:-1], 3.0, atol=1e-12)
+    np.testing.assert_allclose(gy[1:-1, :], -2.0, atol=1e-12)
 
     # Neumann homogênea nas faces externas.
     np.testing.assert_allclose(gx[:, 0], 0.0)
@@ -67,9 +58,7 @@ def test_laplacian_operator_identity(grid):
     expected = divergence_faces(gx, gy, grid)
     actual = laplacian_neumann(phi, grid)
 
-    np.testing.assert_allclose(
-        actual, expected, rtol=1e-12, atol=1e-12
-    )
+    np.testing.assert_allclose(actual, expected, rtol=1e-12, atol=1e-12)
 
 
 def test_laplacian_neumann_compatibility(grid):
@@ -78,22 +67,18 @@ def test_laplacian_neumann_compatibility(grid):
 
     result = laplacian_neumann(phi, grid)
 
-    np.testing.assert_allclose(
-        np.sum(result), 0.0, atol=1e-11
-    )
+    np.testing.assert_allclose(np.sum(result), 0.0, atol=1e-11)
 
 
 def test_corner_stencil():
-    grid = create_grid(
-        SimulationConfig(
-            nx=2, ny=2, lx=2.0, ly=2.0
-        )
-    )
+    grid = create_grid(SimulationConfig(nx=2, ny=2, lx=2.0, ly=2.0))
 
-    phi = np.array([
-        [3.0, 5.0],
-        [7.0, 9.0],
-    ])
+    phi = np.array(
+        [
+            [3.0, 5.0],
+            [7.0, 9.0],
+        ]
+    )
 
     result = laplacian_neumann(phi, grid)
 
@@ -128,6 +113,7 @@ def test_invalid_field_shapes(grid):
     with pytest.raises(ValueError):
         laplacian_neumann(wrong_phi, grid)
 
+
 def test_laplacian_interior_five_point_stencil():
     """Verifica o Laplaciano em uma célula interior."""
 
@@ -140,11 +126,13 @@ def test_laplacian_interior_five_point_stencil():
         )
     )
 
-    phi = np.array([
-        [0.0, 2.0, 0.0],
-        [4.0, 10.0, 6.0],
-        [0.0, 8.0, 0.0],
-    ])
+    phi = np.array(
+        [
+            [0.0, 2.0, 0.0],
+            [4.0, 10.0, 6.0],
+            [0.0, 8.0, 0.0],
+        ]
+    )
 
     result = laplacian_neumann(phi, grid)
 

@@ -12,10 +12,7 @@ def _check_shape(
     name: str,
 ) -> None:
     if field.shape != expected:
-        raise ValueError(
-            f"{name}: esperado shape {expected}, "
-            f"recebido {field.shape}"
-        )
+        raise ValueError(f"{name}: esperado shape {expected}, recebido {field.shape}")
 
 
 def divergence_faces(
@@ -28,13 +25,9 @@ def divergence_faces(
     _check_shape(u_faces, grid.u_face_shape, "u_faces")
     _check_shape(v_faces, grid.v_face_shape, "v_faces")
 
-    du_dx = (
-        u_faces[:, 1:] - u_faces[:, :-1]
-    ) / grid.dx
+    du_dx = (u_faces[:, 1:] - u_faces[:, :-1]) / grid.dx
 
-    dv_dy = (
-        v_faces[1:, :] - v_faces[:-1, :]
-    ) / grid.dy
+    dv_dy = (v_faces[1:, :] - v_faces[:-1, :]) / grid.dy
 
     return du_dx + dv_dy
 
@@ -50,13 +43,9 @@ def gradient_faces(
     gx = grid.zeros_u_faces()
     gy = grid.zeros_v_faces()
 
-    gx[:, 1:-1] = (
-        phi[:, 1:] - phi[:, :-1]
-    ) / grid.dx
+    gx[:, 1:-1] = (phi[:, 1:] - phi[:, :-1]) / grid.dx
 
-    gy[1:-1, :] = (
-        phi[1:, :] - phi[:-1, :]
-    ) / grid.dy
+    gy[1:-1, :] = (phi[1:, :] - phi[:-1, :]) / grid.dy
 
     return gx, gy
 

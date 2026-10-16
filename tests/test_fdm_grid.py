@@ -18,38 +18,28 @@ def test_default_grid_geometry():
     assert grid.x[0] == pytest.approx(grid.dx / 2)
     assert grid.y[0] == pytest.approx(grid.dy / 2)
 
-    assert grid.x[-1] == pytest.approx(
-        config.lx - grid.dx / 2
-    )
-    assert grid.y[-1] == pytest.approx(
-        config.ly - grid.dy / 2
-    )
+    assert grid.x[-1] == pytest.approx(config.lx - grid.dx / 2)
+    assert grid.y[-1] == pytest.approx(config.ly - grid.dy / 2)
 
-    assert grid.cell_area == pytest.approx(
-        grid.dx * grid.dy
-    )
-    
+    assert grid.cell_area == pytest.approx(grid.dx * grid.dy)
+
+
 def test_grid_requires_at_least_two_points_per_direction():
     with pytest.raises(ValueError):
         create_grid(SimulationConfig(nx=1))
 
+
 def test_cell_centered_geometry():
-    config = SimulationConfig(
-        nx=4, ny=2, lx=2.0, ly=1.0
-    )
+    config = SimulationConfig(nx=4, ny=2, lx=2.0, ly=1.0)
 
     grid = create_grid(config)
 
     assert grid.dx == pytest.approx(0.5)
     assert grid.dy == pytest.approx(0.5)
 
-    np.testing.assert_allclose(
-        grid.x, [0.25, 0.75, 1.25, 1.75]
-    )
+    np.testing.assert_allclose(grid.x, [0.25, 0.75, 1.25, 1.75])
 
-    np.testing.assert_allclose(
-        grid.y, [0.25, 0.75]
-    )
+    np.testing.assert_allclose(grid.y, [0.25, 0.75])
 
 
 def test_grid_shapes():
@@ -89,6 +79,7 @@ def test_initialize_fields(nx, ny):
             np.zeros(expected_shape),
         )
 
+
 @pytest.mark.parametrize(
     "nx, ny, lx, ly, expected_exception",
     [
@@ -102,9 +93,7 @@ def test_initialize_fields(nx, ny):
         (10, 5.5, 1.0, 1.0, TypeError),
     ],
 )
-def test_invalid_grid(
-    nx, ny, lx, ly, expected_exception
-):
+def test_invalid_grid(nx, ny, lx, ly, expected_exception):
     config = SimulationConfig(
         nx=nx,
         ny=ny,

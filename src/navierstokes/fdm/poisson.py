@@ -1,4 +1,3 @@
-
 """Montagem do sistema discreto de Poisson com Neumann homogênea."""
 
 from dataclasses import dataclass
@@ -61,17 +60,9 @@ def apply_poisson_system(
 
     result = coefficients.center * phi
 
-    result[:, :-1] -= (
-        coefficients.east[:, :-1] * phi[:, 1:]
-    )
-    result[:, 1:] -= (
-        coefficients.west[:, 1:] * phi[:, :-1]
-    )
-    result[:-1, :] -= (
-        coefficients.north[:-1, :] * phi[1:, :]
-    )
-    result[1:, :] -= (
-        coefficients.south[1:, :] * phi[:-1, :]
-    )
+    result[:, :-1] -= coefficients.east[:, :-1] * phi[:, 1:]
+    result[:, 1:] -= coefficients.west[:, 1:] * phi[:, :-1]
+    result[:-1, :] -= coefficients.north[:-1, :] * phi[1:, :]
+    result[1:, :] -= coefficients.south[1:, :] * phi[:-1, :]
 
     return result

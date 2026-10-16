@@ -28,8 +28,7 @@ def test_zero_transport_and_inputs_unchanged():
     u = rng.standard_normal(grid.scalar_shape)
     v = rng.standard_normal(grid.scalar_shape)
     u0, v0 = u.copy(), v.copy()
-    cu, cv = convection_upwind(u, v, grid.zeros_u_faces(),
-                              grid.zeros_v_faces(), grid)
+    cu, cv = convection_upwind(u, v, grid.zeros_u_faces(), grid.zeros_v_faces(), grid)
     np.testing.assert_array_equal(cu, 0)
     np.testing.assert_array_equal(cv, 0)
     np.testing.assert_array_equal(u, u0)
@@ -52,8 +51,7 @@ def test_convection_global_conservation_and_constant_field():
     # discretamente solenoidais. Fluxos arbitrários NÃO satisfazem isso.
     uc = np.full(grid.scalar_shape, 2.0)
     vc = np.full(grid.scalar_shape, -3.0)
-    cu, cv = convection_upwind(uc, vc, grid.zeros_u_faces(),
-                              grid.zeros_v_faces(), grid)
+    cu, cv = convection_upwind(uc, vc, grid.zeros_u_faces(), grid.zeros_v_faces(), grid)
     np.testing.assert_array_equal(cu, 0)
     np.testing.assert_array_equal(cv, 0)
 
@@ -101,8 +99,8 @@ def test_euler_predictor_matches_initial_lid_diffusion():
         u, v, grid.zeros_u_faces(), grid.zeros_v_faces(), grid, cfg
     )
     expected = grid.zeros_scalar()
-    expected[-1, :] = cfg.dt * cfg.kinematic_viscosity * (
-        2 * cfg.lid_velocity / grid.dy**2
+    expected[-1, :] = (
+        cfg.dt * cfg.kinematic_viscosity * (2 * cfg.lid_velocity / grid.dy**2)
     )
     np.testing.assert_allclose(u_star, expected)
     np.testing.assert_array_equal(v_star, 0)
@@ -127,6 +125,7 @@ def test_stability_validation():
         bad = uf.copy()
         bad[:, 0] = 1
         convection_upwind(u, v, bad, vf, grid)
+
 
 def test_convection_preserves_constant_fields_with_nonzero_transport():
     _, grid = setup_case(nx=20, ny=16)
@@ -155,7 +154,12 @@ def test_convection_preserves_constant_fields_with_nonzero_transport():
 
     np.testing.assert_allclose(cu, 0.0, atol=1e-12)
     np.testing.assert_allclose(cv, 0.0, atol=1e-12)
-    np.testing.assert_allclose(divergence_faces(u_faces, v_faces, grid),0.0,atol=1e-12,)
+    np.testing.assert_allclose(
+        divergence_faces(u_faces, v_faces, grid),
+        0.0,
+        atol=1e-12,
+    )
+
 
 def test_convection_upwind_first_order_refinement():
     errors = []
@@ -168,10 +172,7 @@ def test_convection_upwind_first_order_refinement():
         yv = np.linspace(0.0, 1.0, n + 1)
         x_vertex, y_vertex = np.meshgrid(xv, yv)
 
-        psi = (
-            np.sin(np.pi * x_vertex)
-            * np.sin(np.pi * y_vertex)
-        )
+        psi = np.sin(np.pi * x_vertex) * np.sin(np.pi * y_vertex)
 
         # Fluxos discretamente incompressíveis.
         u_faces = (psi[1:, :] - psi[:-1, :]) / grid.dy
@@ -184,9 +185,7 @@ def test_convection_upwind_first_order_refinement():
         # Usamos a primeira componente como escalar transportado.
         zeros = grid.zeros_scalar()
 
-        conv_phi, _ = convection_upwind(
-            phi, zeros, u_faces, v_faces, grid
-        )
+        conv_phi, _ = convection_upwind(phi, zeros, u_faces, v_faces, grid)
 
         # A solução analítica é identicamente zero.
         error = np.sqrt(np.mean(conv_phi**2))
@@ -195,8 +194,7 @@ def test_convection_upwind_first_order_refinement():
     # Para upwind de primeira ordem, ao dobrar a resolução,
     # esperamos aproximadamente reduzir o erro pela metade.
     orders = [
-        np.log(errors[i] / errors[i + 1]) / np.log(2)
-        for i in range(len(errors) - 1)
+        np.log(errors[i] / errors[i + 1]) / np.log(2) for i in range(len(errors) - 1)
     ]
 
     assert all(0.8 < order < 1.2 for order in orders[-2:])
