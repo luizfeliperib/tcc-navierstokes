@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 from navierstokes.config import SimulationConfig
+from navierstokes.fdm.operators import divergence_faces
 from navierstokes.fdm.grid import create_grid
 from navierstokes.fdm.predictor import (
     convection_upwind,
@@ -154,6 +155,7 @@ def test_convection_preserves_constant_fields_with_nonzero_transport():
 
     np.testing.assert_allclose(cu, 0.0, atol=1e-12)
     np.testing.assert_allclose(cv, 0.0, atol=1e-12)
+    np.testing.assert_allclose(divergence_faces(u_faces, v_faces, grid),0.0,atol=1e-12,)
 
 def test_convection_upwind_first_order_refinement():
     errors = []
