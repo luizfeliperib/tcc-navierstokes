@@ -8,7 +8,133 @@ from navierstokes.config import SimulationConfig
 from navierstokes.fdm.gauss_seidel import GaussSeidelResult
 from navierstokes.fdm.grid import create_grid
 from navierstokes.fdm.operators import divergence_faces, gradient_faces
-from navierstokes.fdm.projection import predict_face_fluxes, solve_projection_pressure
+from navierstokes.fdm.poisson import (
+    apply_poisson_system,
+    assemble_poisson_coefficients,
+)
+from navierstokes.fdm.projection import (
+    correct_face_fluxes,
+    predict_face_fluxes,
+    solve_projection_pressure,
+)
+
+
+def test_face_correction_preserves_zero_pressure_fluxes():
+    grid = create_grid(SimulationConfig(nx=7, ny=5))
+    rng = np.random.default_rng(11)
+
+    uf = rng.normal(size=grid.u_face_shape)
+    vf = rng.normal(size=grid.v_face_shape)
+    uf[:, [0, -1]] = 0.0
+    vf[[0, -1], :] = 0.0
+
+    uf_new, vf_new = correct_face_fluxes(
+        uf, vf, grid.zeros_scalar(), grid,
+        density=1.0, dt=0.01,
+    )
+
+    np.testing.assert_array_equal(uf_new, uf)
+    np.testing.assert_array_equal(vf_new, vf)
+
+
+def test_face_correction_manufactured_pressure():
+    grid = create_grid(SimulationConfig(nx=8, ny=6))
+    x, y = grid.cell_centers()
+
+    pressure = np.cos(2 * np.pi * x) * np.cos(2 * np.pi * y)
+    gx, gy = gradient_faces(pressure, grid)
+
+    density = 1.0
+    dt = 0.01
+
+    uf_star = (dt / density) * gx
+    vf_star = (dt / density) * gy
+
+    uf_new, vf_new = correct_face_fluxes(
+        uf_star, vf_star, pressure, grid,
+        density=density, dt=dt,
+    )
+
+    np.testing.assert_allclose(uf_new, 0.0, atol=1e-14)
+    np.testing.assert_allclose(vf_new, 0.0, atol=1e-14)
+
+
+def test_face_projection_divergence_matches_poisson_residual():
+    grid = create_grid(SimulationConfig(nx=8, ny=6))
+    x, y = grid.cell_centers()
+
+    exact = np.cos(2 * np.pi * x) * np.cos(2 * np.pi * y)
+    gx, gy = gradient_faces(exact, grid)
+
+    density = 1.0
+    dt = 0.01
+
+    uf_star = (dt / density) * gx
+    vf_star = (dt / density) * gy
+
+    result = solve_projection_pressure(
+        uf_star, vf_star, grid,
+        density=density,
+        dt=dt,
+        tolerance=1e-10,
+        max_iterations=10_000,
+    )
+
+    uf_new, vf_new = correct_face_fluxes(
+        uf_star, vf_star, result.phi, grid,
+        density=density, dt=dt,
+    )
+
+    divergence_new = divergence_faces(uf_new, vf_new, grid)
+
+    coefficients = assemble_poisson_coefficients(grid)
+    rhs = -(density / dt) * divergence_faces(
+        uf_star, vf_star, grid
+    )
+    residual_field = rhs - apply_poisson_system(
+        result.phi, coefficients
+    )
+
+    np.testing.assert_allclose(
+        divergence_new,
+        -(dt / density) * residual_field,
+        atol=1e-12,
+        rtol=1e-10,
+    )
+
+    rms_divergence = np.linalg.norm(divergence_new) / np.sqrt(
+        divergence_new.size
+    )
+
+    assert rms_divergence <= (
+        (dt / density) * result.residual + 1e-12
+    )
+
+
+def test_face_correction_preserves_inputs_and_walls():
+    grid = create_grid(SimulationConfig(nx=7, ny=5))
+    rng = np.random.default_rng(23)
+
+    uf = rng.normal(size=grid.u_face_shape)
+    vf = rng.normal(size=grid.v_face_shape)
+    uf[:, [0, -1]] = 0.0
+    vf[[0, -1], :] = 0.0
+    pressure = rng.normal(size=grid.scalar_shape)
+
+    originals = [arr.copy() for arr in (uf, vf, pressure)]
+
+    uf_new, vf_new = correct_face_fluxes(
+        uf, vf, pressure, grid,
+        density=1.0, dt=0.01,
+    )
+
+    for actual, original in zip(
+        (uf, vf, pressure), originals
+    ):
+        np.testing.assert_array_equal(actual, original)
+
+    np.testing.assert_array_equal(uf_new[:, [0, -1]], 0.0)
+    np.testing.assert_array_equal(vf_new[[0, -1], :], 0.0)
 
 
 def test_projection_pressure_zero_fluxes():

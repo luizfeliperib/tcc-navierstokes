@@ -9,10 +9,56 @@ from navierstokes.fdm.gauss_seidel import (
     solve_poisson_gauss_seidel,
 )
 from navierstokes.fdm.grid import CartesianGrid
-from navierstokes.fdm.operators import divergence_faces
+from navierstokes.fdm.operators import divergence_faces, gradient_faces
 from navierstokes.fdm.poisson import assemble_poisson_coefficients
 from navierstokes.fdm.predictor import _check_field
 
+
+def correct_face_fluxes(
+    u_faces_star: NDArray,
+    v_faces_star: NDArray,
+    pressure: NDArray,
+    grid: CartesianGrid,
+    *,
+    density: float,
+    dt: float,
+) -> tuple[NDArray, NDArray]:
+    """Corrige os fluxos provisórios pelo gradiente discreto da pressão.
+
+    Usa o mesmo operador G_h da montagem de Poisson, garantindo
+    compatibilidade com L_h = D_h G_h.
+
+    Aplicável à cavidade fechada com Neumann homogênea para pressão.
+    Não modifica os arrays de entrada.
+    """
+    _check_field(u_faces_star, grid.u_face_shape, "u_faces_star")
+    _check_field(v_faces_star, grid.v_face_shape, "v_faces_star")
+    _check_field(pressure, grid.scalar_shape, "pressure")
+
+    if not np.isfinite(density) or density <= 0:
+        raise ValueError("density deve ser finita e positiva")
+    if not np.isfinite(dt) or dt <= 0:
+        raise ValueError("dt deve ser finito e positivo")
+
+    if not (
+        np.allclose(
+            u_faces_star[:, [0, -1]], 0.0, atol=1e-14, rtol=0
+        )
+        and np.allclose(
+            v_faces_star[[0, -1], :], 0.0, atol=1e-14, rtol=0
+        )
+    ):
+        raise ValueError(
+            "Cavidade impermeável exige fluxos normais externos nulos"
+        )
+
+    grad_px, grad_py = gradient_faces(pressure, grid)
+    correction_factor = dt / density
+
+    u_faces_new = u_faces_star - correction_factor * grad_px
+    v_faces_new = v_faces_star - correction_factor * grad_py
+
+    return u_faces_new, v_faces_new
 
 def solve_projection_pressure(
     u_faces_star: NDArray,
