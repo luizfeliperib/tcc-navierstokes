@@ -12,6 +12,7 @@ from navierstokes.fdm.diagnostics import (
 )
 from navierstokes.fdm.grid import CartesianGrid, create_grid
 from navierstokes.fdm.time_step import FlowState, advance_one_step
+from navierstokes.fdm.poisson import assemble_poisson_coefficients
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,6 +77,7 @@ def solve(
     steady_consecutive_steps: int = 20,
     min_steps: int = 100,
     record_interval: int = 10,
+    residual_check_interval: int = 1,
 ) -> SimulationResult:
     """Executa a simulacao com passo temporal constante.
 
@@ -114,6 +116,9 @@ def solve(
     grid = create_grid(config)
     state = initialize_state(grid)
 
+    # A matriz discreta permanece constante durante a simulação.
+    coefficients = assemble_poisson_coefficients(grid)
+
     history: list[SimulationRecord] = []
     consecutive = 0
     converged = False
@@ -130,6 +135,8 @@ def solve(
             pressure_tolerance=pressure_tolerance,
             pressure_max_iterations=pressure_max_iterations,
             backend=backend,
+            residual_check_interval=residual_check_interval,
+            coefficients=coefficients,
         )
 
         state = step_result.state

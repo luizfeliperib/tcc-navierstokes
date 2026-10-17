@@ -12,7 +12,10 @@ from navierstokes.fdm.gauss_seidel import (
 )
 from navierstokes.fdm.grid import CartesianGrid
 from navierstokes.fdm.operators import divergence_faces, gradient_faces
-from navierstokes.fdm.poisson import assemble_poisson_coefficients
+from navierstokes.fdm.poisson import (
+    PoissonCoefficients,
+    assemble_poisson_coefficients,
+)
 from navierstokes.fdm.predictor import _check_field
 
 
@@ -122,6 +125,8 @@ def solve_projection_pressure(
     max_iterations: int = 10_000,
     initial_pressure: NDArray | None = None,
     backend: Literal["python", "numba"] = "python",
+    residual_check_interval: int = 1,
+    coefficients: PoissonCoefficients | None = None,
 ) -> GaussSeidelResult:
     """Resolve A p = -(rho/dt) D_h(u_f*), com A = -D_h G_h.
 
@@ -148,7 +153,10 @@ def solve_projection_pressure(
     if not np.all(np.isfinite(rhs)):
         raise ValueError("Termo-fonte de pressão não finito")
 
-    coefficients = assemble_poisson_coefficients(grid)
+    if coefficients is None:
+        coefficients = assemble_poisson_coefficients(grid)
+    elif coefficients.center.shape != grid.scalar_shape:
+        raise ValueError("Coeficientes incompatíveis com a malha")
 
     result = solve_poisson_gauss_seidel(
         rhs,
@@ -157,6 +165,7 @@ def solve_projection_pressure(
         max_iterations=max_iterations,
         initial_phi=initial_pressure,
         backend=backend,
+        residual_check_interval=residual_check_interval,
     )
 
     if not result.converged:

@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from typing import Literal
+from navierstokes.fdm.poisson import PoissonCoefficients
 
 from numpy.typing import NDArray
 
@@ -48,6 +49,8 @@ def advance_one_step(
     pressure_tolerance: float = 1e-8,
     pressure_max_iterations: int = 10_000,
     backend: Literal["python", "numba"] = "python",
+    residual_check_interval: int = 1,
+    coefficients: PoissonCoefficients | None = None,
 ) -> TimeStepResult:
     """Executa um passo completo do método de projeção.
 
@@ -97,6 +100,8 @@ def advance_one_step(
         max_iterations=pressure_max_iterations,
         initial_pressure=state.pressure,
         backend=backend,
+        residual_check_interval=residual_check_interval,
+        coefficients=coefficients,
     )
 
     pressure = pressure_result.phi
