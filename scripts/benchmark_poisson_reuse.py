@@ -1,4 +1,3 @@
-
 """FDM-07.2.4 — Benchmark de reutilização dos coeficientes de Poisson."""
 
 import argparse
@@ -35,9 +34,7 @@ def run_case(n, steps, reuse):
     # Montagem inicial fica dentro da medição.
     start = time.perf_counter()
 
-    coefficients = (
-        assemble_poisson_coefficients(grid) if reuse else None
-    )
+    coefficients = assemble_poisson_coefficients(grid) if reuse else None
 
     iterations = []
     residuals = []
@@ -93,51 +90,35 @@ def main():
         baseline_state, baseline = run_case(n, args.steps, False)
         optimized_state, optimized = run_case(n, args.steps, True)
 
-        baseline.update({
-            "delta_u_rms": 0.0,
-            "delta_v_rms": 0.0,
-            "delta_pressure_rms": 0.0,
-        })
+        baseline.update(
+            {
+                "delta_u_rms": 0.0,
+                "delta_v_rms": 0.0,
+                "delta_pressure_rms": 0.0,
+            }
+        )
 
-        optimized.update({
-            "delta_u_rms": rms(
-                optimized_state.u - baseline_state.u
-            ),
-            "delta_v_rms": rms(
-                optimized_state.v - baseline_state.v
-            ),
-            "delta_pressure_rms": rms(
-                optimized_state.pressure - baseline_state.pressure
-            ),
-        })
+        optimized.update(
+            {
+                "delta_u_rms": rms(optimized_state.u - baseline_state.u),
+                "delta_v_rms": rms(optimized_state.v - baseline_state.v),
+                "delta_pressure_rms": rms(
+                    optimized_state.pressure - baseline_state.pressure
+                ),
+            }
+        )
 
         rows.extend([baseline, optimized])
 
-        speedup = (
-            baseline["elapsed_seconds"]
-            / optimized["elapsed_seconds"]
-        )
+        speedup = baseline["elapsed_seconds"] / optimized["elapsed_seconds"]
 
         print(f"\nMalha {n}x{n}")
-        print(
-            f"Sem reutilização: {baseline['elapsed_seconds']:.4f} s"
-        )
-        print(
-            f"Com reutilização: {optimized['elapsed_seconds']:.4f} s"
-        )
+        print(f"Sem reutilização: {baseline['elapsed_seconds']:.4f} s")
+        print(f"Com reutilização: {optimized['elapsed_seconds']:.4f} s")
         print(f"Aceleração: {speedup:.3f}x")
-        print(
-            "Diferença RMS de u: "
-            f"{optimized['delta_u_rms']:.3e}"
-        )
-        print(
-            "Diferença RMS de v: "
-            f"{optimized['delta_v_rms']:.3e}"
-        )
-        print(
-            "Diferença RMS de p: "
-            f"{optimized['delta_pressure_rms']:.3e}"
-        )
+        print(f"Diferença RMS de u: {optimized['delta_u_rms']:.3e}")
+        print(f"Diferença RMS de v: {optimized['delta_v_rms']:.3e}")
+        print(f"Diferença RMS de p: {optimized['delta_pressure_rms']:.3e}")
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
 

@@ -11,8 +11,8 @@ from navierstokes.fdm.diagnostics import (
     calculate_diagnostics,
 )
 from navierstokes.fdm.grid import CartesianGrid, create_grid
-from navierstokes.fdm.time_step import FlowState, advance_one_step
 from navierstokes.fdm.poisson import assemble_poisson_coefficients
+from navierstokes.fdm.time_step import FlowState, advance_one_step
 
 
 @dataclass(frozen=True, slots=True)

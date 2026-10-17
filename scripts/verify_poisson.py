@@ -1,4 +1,3 @@
-
 """FDM-07.2.2 — Verificação isolada do solucionador de Poisson."""
 
 import argparse
@@ -9,12 +8,12 @@ from pathlib import Path
 import numpy as np
 
 from navierstokes.config import SimulationConfig
+from navierstokes.fdm.gauss_seidel import solve_poisson_gauss_seidel
 from navierstokes.fdm.grid import create_grid
 from navierstokes.fdm.poisson import (
     apply_poisson_system,
     assemble_poisson_coefficients,
 )
-from navierstokes.fdm.gauss_seidel import solve_poisson_gauss_seidel
 
 
 def run_case(n: int, tolerance: float, max_iterations: int) -> dict:
@@ -41,17 +40,11 @@ def run_case(n: int, tolerance: float, max_iterations: int) -> dict:
     elapsed = time.perf_counter() - start
 
     error = result.phi - phi_ref
-    relative_error = (
-        np.linalg.norm(error) / np.linalg.norm(phi_ref)
-    )
+    relative_error = np.linalg.norm(error) / np.linalg.norm(phi_ref)
     max_error = np.max(np.abs(error))
 
-    true_residual = rhs - apply_poisson_system(
-        result.phi, coefficients
-    )
-    residual_rms = (
-        np.linalg.norm(true_residual) / np.sqrt(rhs.size)
-    )
+    true_residual = rhs - apply_poisson_system(result.phi, coefficients)
+    residual_rms = np.linalg.norm(true_residual) / np.sqrt(rhs.size)
 
     return {
         "mesh": f"{n}x{n}",
@@ -69,15 +62,9 @@ def run_case(n: int, tolerance: float, max_iterations: int) -> dict:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--sizes", type=int, nargs="+", default=[16, 32, 64]
-    )
-    parser.add_argument(
-        "--tolerance", type=float, default=1e-9
-    )
-    parser.add_argument(
-        "--max-iterations", type=int, default=50000
-    )
+    parser.add_argument("--sizes", type=int, nargs="+", default=[16, 32, 64])
+    parser.add_argument("--tolerance", type=float, default=1e-9)
+    parser.add_argument("--max-iterations", type=int, default=50000)
     parser.add_argument(
         "--output",
         type=Path,

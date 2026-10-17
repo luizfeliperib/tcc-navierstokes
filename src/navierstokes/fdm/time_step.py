@@ -2,13 +2,13 @@
 
 from dataclasses import dataclass
 from typing import Literal
-from navierstokes.fdm.poisson import PoissonCoefficients
 
 from numpy.typing import NDArray
 
 from navierstokes.config import SimulationConfig
 from navierstokes.fdm.gauss_seidel import GaussSeidelResult
 from navierstokes.fdm.grid import CartesianGrid
+from navierstokes.fdm.poisson import PoissonCoefficients
 from navierstokes.fdm.predictor import (
     _check_field,
     _check_geometry,

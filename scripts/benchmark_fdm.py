@@ -1,4 +1,3 @@
-
 """FDM-07.2.1: benchmark de desempenho do solver FDM."""
 
 import argparse
@@ -47,9 +46,7 @@ def run_benchmark(
             backend="numba",
             stop_on_steady=False,
         )
-        print(
-            f"Aquecimento: {perf_counter() - start:.2f} s"
-        )
+        print(f"Aquecimento: {perf_counter() - start:.2f} s")
 
     rows = []
 
@@ -93,15 +90,9 @@ def run_benchmark(
 
         elapsed = perf_counter() - start
 
-        iterations = [
-            record.poisson_iterations
-            for record in result.history
-        ]
+        iterations = [record.poisson_iterations for record in result.history]
 
-        residuals = [
-            record.poisson_residual
-            for record in result.history
-        ]
+        residuals = [record.poisson_residual for record in result.history]
 
         final_record = result.history[-1]
 
@@ -120,9 +111,7 @@ def run_benchmark(
             "poisson_iterations_max": max(iterations),
             "poisson_residual_max": max(residuals),
             "steady_residual_final": result.steady_residual,
-            "divergence_rms_final": (
-                final_record.diagnostics.divergence_rms
-            ),
+            "divergence_rms_final": (final_record.diagnostics.divergence_rms),
             "initial_dt_limit": initial_dt_limit,
         }
 
@@ -136,9 +125,7 @@ def run_benchmark(
 
     output.parent.mkdir(parents=True, exist_ok=True)
 
-    with output.open(
-        "w", newline="", encoding="utf-8"
-    ) as file:
+    with output.open("w", newline="", encoding="utf-8") as file:
         writer = csv.DictWriter(
             file,
             fieldnames=list(rows[0].keys()),
@@ -151,9 +138,7 @@ def run_benchmark(
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Benchmark de desempenho FDM."
-    )
+    parser = argparse.ArgumentParser(description="Benchmark de desempenho FDM.")
     parser.add_argument(
         "--sizes",
         type=int,

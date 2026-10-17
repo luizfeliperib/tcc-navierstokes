@@ -1,4 +1,3 @@
-
 """Solver Gauss-Seidel para Poisson com Neumann homogenea."""
 
 from dataclasses import dataclass
@@ -77,9 +76,7 @@ def solve_poisson_gauss_seidel(
         or not isinstance(max_iterations, (int, np.integer))
         or max_iterations < 1
     ):
-        raise ValueError(
-            "max_iterations deve ser inteiro positivo"
-        )
+        raise ValueError("max_iterations deve ser inteiro positivo")
 
     if (
         isinstance(residual_check_interval, (bool, np.bool_))
@@ -89,23 +86,13 @@ def solve_poisson_gauss_seidel(
         )
         or residual_check_interval < 1
     ):
-        raise ValueError(
-            "residual_check_interval deve ser inteiro positivo"
-        )
+        raise ValueError("residual_check_interval deve ser inteiro positivo")
 
     if backend not in ("python", "numba"):
-        raise ValueError(
-            "backend deve ser 'python' ou 'numba'"
-        )
+        raise ValueError("backend deve ser 'python' ou 'numba'")
 
-    if (
-        not np.isfinite(compatibility_tolerance)
-        or compatibility_tolerance < 0
-    ):
-        raise ValueError(
-            "compatibility_tolerance deve ser finita "
-            "e nao negativa"
-        )
+    if not np.isfinite(compatibility_tolerance) or compatibility_tolerance < 0:
+        raise ValueError("compatibility_tolerance deve ser finita e nao negativa")
 
     # ========================================================
     # 2. COMPATIBILIDADE DO TERMO-FONTE
@@ -123,10 +110,7 @@ def solve_poisson_gauss_seidel(
         float(np.max(np.abs(rhs))),
     )
 
-    if (
-        abs(mean_rhs)
-        > compatibility_tolerance * scale_rhs
-    ):
+    if abs(mean_rhs) > compatibility_tolerance * scale_rhs:
         raise ValueError(
             "rhs incompatível com Neumann homogênea: "
             "a média discreta deve ser aproximadamente zero"
@@ -148,14 +132,10 @@ def solve_poisson_gauss_seidel(
         )
 
         if initial_phi.shape != shape:
-            raise ValueError(
-                "Shape de initial_phi incompatível"
-            )
+            raise ValueError("Shape de initial_phi incompatível")
 
         if not np.all(np.isfinite(initial_phi)):
-            raise ValueError(
-                "initial_phi deve ser finito"
-            )
+            raise ValueError("initial_phi deve ser finito")
 
         # Evita modificar o array recebido.
         phi = initial_phi.copy()
@@ -172,19 +152,13 @@ def solve_poisson_gauss_seidel(
         ("south", coefficients.south),
     ):
         if array.shape != shape:
-            raise ValueError(
-                f"Shape de {name} incompatível"
-            )
+            raise ValueError(f"Shape de {name} incompatível")
 
         if not np.all(np.isfinite(array)):
-            raise ValueError(
-                f"{name} deve conter valores finitos"
-            )
+            raise ValueError(f"{name} deve conter valores finitos")
 
     if np.any(coefficients.center <= 0):
-        raise ValueError(
-            "Diagonal de Poisson inválida"
-        )
+        raise ValueError("Diagonal de Poisson inválida")
 
     # ========================================================
     # 5. REFERENCIA DE PRESSAO
@@ -204,25 +178,18 @@ def solve_poisson_gauss_seidel(
     # ========================================================
 
     def true_residual() -> float:
-        residual_field = (
-            rhs
-            - apply_poisson_system(
-                phi,
-                coefficients,
-            )
+        residual_field = rhs - apply_poisson_system(
+            phi,
+            coefficients,
         )
 
         with np.errstate(
             over="ignore",
             invalid="ignore",
         ):
-            residual_norm = np.linalg.norm(
-                residual_field
-            )
+            residual_norm = np.linalg.norm(residual_field)
 
-        return float(
-            residual_norm / np.sqrt(rhs.size)
-        )
+        return float(residual_norm / np.sqrt(rhs.size))
 
     # ========================================================
     # 7. RESIDUO INICIAL E HISTORICO
@@ -231,9 +198,7 @@ def solve_poisson_gauss_seidel(
     residual = true_residual()
 
     if not np.isfinite(residual):
-        raise FloatingPointError(
-            "Residuo inicial nao finito"
-        )
+        raise FloatingPointError("Residuo inicial nao finito")
 
     # A variavel history e inicializada antes do laco.
     history = [residual]
@@ -272,7 +237,6 @@ def solve_poisson_gauss_seidel(
         1,
         max_iterations + 1,
     ):
-
         # ----------------------------------------------------
         # 9.1. VARREDURA GAUSS-SEIDEL
         # ----------------------------------------------------
@@ -294,32 +258,18 @@ def solve_poisson_gauss_seidel(
                     neighbor_sum = 0.0
 
                     if i + 1 < nx:
-                        neighbor_sum += (
-                            coefficients.east[j, i]
-                            * phi[j, i + 1]
-                        )
+                        neighbor_sum += coefficients.east[j, i] * phi[j, i + 1]
 
                     if i > 0:
-                        neighbor_sum += (
-                            coefficients.west[j, i]
-                            * phi[j, i - 1]
-                        )
+                        neighbor_sum += coefficients.west[j, i] * phi[j, i - 1]
 
                     if j + 1 < ny:
-                        neighbor_sum += (
-                            coefficients.north[j, i]
-                            * phi[j + 1, i]
-                        )
+                        neighbor_sum += coefficients.north[j, i] * phi[j + 1, i]
 
                     if j > 0:
-                        neighbor_sum += (
-                            coefficients.south[j, i]
-                            * phi[j - 1, i]
-                        )
+                        neighbor_sum += coefficients.south[j, i] * phi[j - 1, i]
 
-                    phi[j, i] = (
-                        rhs[j, i] + neighbor_sum
-                    ) / coefficients.center[j, i]
+                    phi[j, i] = (rhs[j, i] + neighbor_sum) / coefficients.center[j, i]
 
         # ----------------------------------------------------
         # 9.2. NORMALIZACAO DA PRESSAO
@@ -335,20 +285,16 @@ def solve_poisson_gauss_seidel(
         # ----------------------------------------------------
 
         should_check_residual = (
-            iteration % residual_check_interval == 0
-            or iteration == max_iterations
+            iteration % residual_check_interval == 0 or iteration == max_iterations
         )
 
         if should_check_residual:
-
             residual = true_residual()
 
             history.append(residual)
 
             if not np.isfinite(residual):
-                raise FloatingPointError(
-                    "Residuo nao finito durante Gauss-Seidel"
-                )
+                raise FloatingPointError("Residuo nao finito durante Gauss-Seidel")
 
             # A convergencia so e aceita depois de
             # calcular o residuo verdadeiro.

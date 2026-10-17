@@ -1,4 +1,3 @@
-
 """Testes da reutilização dos coeficientes de Poisson."""
 
 import numpy as np
@@ -54,9 +53,6 @@ def test_reused_coefficients_preserve_one_step(interval):
             atol=1e-12,
         )
 
-    assert (
-        original.pressure_result.iterations
-        == optimized.pressure_result.iterations
-    )
+    assert original.pressure_result.iterations == optimized.pressure_result.iterations
 
     assert optimized.pressure_result.residual <= 1e-9

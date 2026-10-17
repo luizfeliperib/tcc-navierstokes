@@ -1,4 +1,3 @@
-
 """FDM-07.2.4: compara intervalos no solver completo."""
 
 import csv
@@ -8,8 +7,8 @@ from pathlib import Path
 import numpy as np
 
 from navierstokes.config import SimulationConfig
-from navierstokes.fdm.solver import solve
 from navierstokes.fdm.operators import divergence_faces
+from navierstokes.fdm.solver import solve
 
 
 def rms(field):
@@ -54,9 +53,7 @@ def run_case(n, steps, interval):
         "mean_poisson_iterations": float(
             np.mean([r.poisson_iterations for r in result.history])
         ),
-        "max_poisson_residual": float(
-            max(r.poisson_residual for r in result.history)
-        ),
+        "max_poisson_residual": float(max(r.poisson_residual for r in result.history)),
         "divergence_rms": rms(divergence),
     }
 
@@ -69,11 +66,13 @@ def main():
 
     for n, steps in [(16, 30), (32, 20)]:
         reference, reference_row = run_case(n, steps, 1)
-        reference_row.update({
-            "delta_u_rms": 0.0,
-            "delta_v_rms": 0.0,
-            "delta_pressure_rms": 0.0,
-        })
+        reference_row.update(
+            {
+                "delta_u_rms": 0.0,
+                "delta_v_rms": 0.0,
+                "delta_pressure_rms": 0.0,
+            }
+        )
         rows.append(reference_row)
 
         print(f"\nMalha {n}x{n}, {steps} passos")
@@ -82,22 +81,15 @@ def main():
         for interval in (10, 20):
             result, row = run_case(n, steps, interval)
 
-            row["delta_u_rms"] = rms(
-                result.state.u - reference.state.u
-            )
-            row["delta_v_rms"] = rms(
-                result.state.v - reference.state.v
-            )
+            row["delta_u_rms"] = rms(result.state.u - reference.state.u)
+            row["delta_v_rms"] = rms(result.state.v - reference.state.v)
             row["delta_pressure_rms"] = rms(
                 result.state.pressure - reference.state.pressure
             )
 
             rows.append(row)
 
-            speedup = (
-                reference_row["elapsed_seconds"]
-                / row["elapsed_seconds"]
-            )
+            speedup = reference_row["elapsed_seconds"] / row["elapsed_seconds"]
 
             print(
                 f"k={interval}: "

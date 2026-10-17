@@ -1,4 +1,3 @@
-
 """Benchmark de frequência de cálculo do resíduo."""
 
 import csv
@@ -51,8 +50,7 @@ def run(n, interval):
         "elapsed_seconds": elapsed,
         "true_residual": true_residual,
         "relative_error": (
-            np.linalg.norm(result.phi - phi_ref)
-            / np.linalg.norm(phi_ref)
+            np.linalg.norm(result.phi - phi_ref) / np.linalg.norm(phi_ref)
         ),
     }
 

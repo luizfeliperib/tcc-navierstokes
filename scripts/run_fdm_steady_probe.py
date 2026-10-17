@@ -1,4 +1,3 @@
-
 """FDM-07.2.7 — Sondagem de convergência estacionária em Re=100."""
 
 import argparse
@@ -58,35 +57,37 @@ def main():
 
     history_path = args.output / "history.csv"
 
-    with history_path.open(
-        "w", newline="", encoding="utf-8"
-    ) as file:
+    with history_path.open("w", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
-        writer.writerow([
-            "step",
-            "time",
-            "steady_residual",
-            "poisson_residual",
-            "poisson_iterations",
-            "divergence_rms",
-            "kinetic_energy_mean",
-            "max_abs_u",
-            "max_abs_v",
-        ])
+        writer.writerow(
+            [
+                "step",
+                "time",
+                "steady_residual",
+                "poisson_residual",
+                "poisson_iterations",
+                "divergence_rms",
+                "kinetic_energy_mean",
+                "max_abs_u",
+                "max_abs_v",
+            ]
+        )
 
         for record in result.history:
             diagnostics = record.diagnostics
-            writer.writerow([
-                record.step,
-                record.time,
-                record.steady_residual,
-                record.poisson_residual,
-                record.poisson_iterations,
-                diagnostics.divergence_rms,
-                diagnostics.kinetic_energy_mean,
-                diagnostics.max_abs_u,
-                diagnostics.max_abs_v,
-            ])
+            writer.writerow(
+                [
+                    record.step,
+                    record.time,
+                    record.steady_residual,
+                    record.poisson_residual,
+                    record.poisson_iterations,
+                    diagnostics.divergence_rms,
+                    diagnostics.kinetic_energy_mean,
+                    diagnostics.max_abs_u,
+                    diagnostics.max_abs_v,
+                ]
+            )
 
     summary = {
         "reynolds": 100.0,
@@ -104,9 +105,7 @@ def main():
         "residual_check_interval": 20,
     }
 
-    with (args.output / "summary.json").open(
-        "w", encoding="utf-8"
-    ) as file:
+    with (args.output / "summary.json").open("w", encoding="utf-8") as file:
         json.dump(summary, file, indent=2)
 
     print("\nResultado:")

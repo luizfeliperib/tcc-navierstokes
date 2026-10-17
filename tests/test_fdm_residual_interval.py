@@ -1,4 +1,3 @@
-
 """FDM-07.2.4: testes da frequência de avaliação do resíduo."""
 
 import numpy as np
@@ -65,9 +64,7 @@ def test_final_iteration_always_checks_residual(interval):
     )
 
     assert result.iterations == 7
-    assert len(result.residual_history) == 1 + 7 // interval + (
-        7 % interval != 0
-    )
+    assert len(result.residual_history) == 1 + 7 // interval + (7 % interval != 0)
 
     true_residual = np.linalg.norm(
         rhs - apply_poisson_system(result.phi, coeff)
