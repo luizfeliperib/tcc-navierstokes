@@ -1,4 +1,3 @@
-
 """Verificacao final da integracao FDM-06.7."""
 
 import numpy as np
@@ -78,13 +77,20 @@ def test_solver_matches_manual_time_stepping(backend):
 
     # Verificacao do historico.
     assert [record.step for record in simulation.history] == [
-        1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100
+        1,
+        10,
+        20,
+        30,
+        40,
+        50,
+        60,
+        70,
+        80,
+        90,
+        100,
     ]
 
     assert simulation.history[-1].time == pytest.approx(0.1)
 
     # Verifica a conservacao discreta de massa nas faces.
-    assert (
-        simulation.history[-1].diagnostics.divergence_rms
-        < 1e-8
-    )
+    assert simulation.history[-1].diagnostics.divergence_rms < 1e-8

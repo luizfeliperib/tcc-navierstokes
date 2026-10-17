@@ -1,4 +1,3 @@
-
 """Testes da exportação de resultados FDM-07.1."""
 
 import csv
@@ -13,14 +12,8 @@ from navierstokes.fdm.solver import solve
 
 
 def load_export_function():
-    script = (
-        Path(__file__).resolve().parents[1]
-        / "scripts"
-        / "run_fdm_validation.py"
-    )
-    spec = importlib.util.spec_from_file_location(
-        "run_fdm_validation", script
-    )
+    script = Path(__file__).resolve().parents[1] / "scripts" / "run_fdm_validation.py"
+    spec = importlib.util.spec_from_file_location("run_fdm_validation", script)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module.export_results
@@ -58,31 +51,19 @@ def test_export_results(tmp_path):
         assert data["u_faces"].shape == (6, 9)
         assert data["v_faces"].shape == (7, 8)
 
-        np.testing.assert_array_equal(
-            data["u"], result.state.u
-        )
-        np.testing.assert_array_equal(
-            data["pressure"], result.state.pressure
-        )
-        np.testing.assert_array_equal(
-            data["x"], result.grid.x
-        )
-        np.testing.assert_array_equal(
-            data["y"], result.grid.y
-        )
+        np.testing.assert_array_equal(data["u"], result.state.u)
+        np.testing.assert_array_equal(data["pressure"], result.state.pressure)
+        np.testing.assert_array_equal(data["x"], result.grid.x)
+        np.testing.assert_array_equal(data["y"], result.grid.y)
 
-    with (tmp_path / "history.csv").open(
-        encoding="utf-8", newline=""
-    ) as file:
+    with (tmp_path / "history.csv").open(encoding="utf-8", newline="") as file:
         rows = list(csv.DictReader(file))
 
     assert len(rows) == len(result.history)
     assert int(rows[-1]["step"]) == result.steps
     assert "divergence_rms" in rows[-1]
 
-    with (tmp_path / "metadata.json").open(
-        encoding="utf-8"
-    ) as file:
+    with (tmp_path / "metadata.json").open(encoding="utf-8") as file:
         metadata = json.load(file)
 
     assert metadata["configuration"]["reynolds"] == 100.0
@@ -117,15 +98,9 @@ def test_plot_results(tmp_path):
         settings={"backend": "python"},
     )
 
-    script = (
-        Path(__file__).resolve().parents[1]
-        / "scripts"
-        / "plot_fdm_validation.py"
-    )
+    script = Path(__file__).resolve().parents[1] / "scripts" / "plot_fdm_validation.py"
 
-    spec = importlib.util.spec_from_file_location(
-        "plot_fdm_validation", script
-    )
+    spec = importlib.util.spec_from_file_location("plot_fdm_validation", script)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
 

@@ -3,14 +3,14 @@
 import argparse
 import csv
 import json
+import subprocess
+import sys
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 from time import perf_counter
 
 import numpy as np
-import subprocess
-import sys
 
 from navierstokes.config import SimulationConfig
 from navierstokes.fdm.solver import solve
@@ -50,9 +50,7 @@ def export_results(result, config, output_dir, elapsed, settings):
         "kinetic_energy_mean",
     ]
 
-    with (output_dir / "history.csv").open(
-        "w", newline="", encoding="utf-8"
-    ) as file:
+    with (output_dir / "history.csv").open("w", newline="", encoding="utf-8") as file:
         writer = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
 
@@ -91,9 +89,7 @@ def export_results(result, config, output_dir, elapsed, settings):
         },
     }
 
-    with (output_dir / "metadata.json").open(
-        "w", encoding="utf-8"
-    ) as file:
+    with (output_dir / "metadata.json").open("w", encoding="utf-8") as file:
         json.dump(metadata, file, indent=2, ensure_ascii=False)
 
     return output_dir
@@ -112,13 +108,9 @@ def main():
     parser.add_argument("--pressure-tolerance", type=float, default=1e-9)
     parser.add_argument("--pressure-max-iterations", type=int, default=10000)
     parser.add_argument("--record-interval", type=int, default=10)
-    parser.add_argument(
-        "--backend", choices=("python", "numba"), default="python"
-    )
+    parser.add_argument("--backend", choices=("python", "numba"), default="python")
     parser.add_argument("--stop-on-steady", action="store_true")
-    parser.add_argument(
-        "--output", type=Path, default=Path("results/fdm_07_smoke")
-    )
+    parser.add_argument("--output", type=Path, default=Path("results/fdm_07_smoke"))
     parser.add_argument(
         "--plot",
         action="store_true",
@@ -159,14 +151,10 @@ def main():
 
     elapsed = perf_counter() - start
 
-    export_results(
-        result, config, args.output, elapsed, settings
-    )
+    export_results(result, config, args.output, elapsed, settings)
 
     if args.plot:
-        plot_script = Path(__file__).with_name(
-            "plot_fdm_validation.py"
-        )
+        plot_script = Path(__file__).with_name("plot_fdm_validation.py")
 
         subprocess.run(
             [
