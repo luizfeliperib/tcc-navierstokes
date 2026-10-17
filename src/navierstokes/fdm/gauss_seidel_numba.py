@@ -1,4 +1,4 @@
-"""Varredura Gauss-Seidel compilada, preservando a ordem lexicografica."""
+"""Varredura Gauss-Seidel/SOR compilada com ordem lexicográfica."""
 
 import numpy as np
 from numba import njit
@@ -14,8 +14,9 @@ def gauss_seidel_sweep(
     west: NDArray[np.float64],
     north: NDArray[np.float64],
     south: NDArray[np.float64],
+    omega: float = 1.0,
 ) -> None:
-    """Executa uma varredura in-place, da esquerda para a direita."""
+    """Executa uma varredura in-place de GS ou SOR."""
 
     ny, nx = phi.shape
 
@@ -35,4 +36,8 @@ def gauss_seidel_sweep(
             if j > 0:
                 neighbor_sum += south[j, i] * phi[j - 1, i]
 
-            phi[j, i] = (rhs[j, i] + neighbor_sum) / center[j, i]
+            old_phi = phi[j, i]
+
+            gs_value = (rhs[j, i] + neighbor_sum) / center[j, i]
+
+            phi[j, i] = old_phi + omega * (gs_value - old_phi)

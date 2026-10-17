@@ -127,6 +127,7 @@ def solve_projection_pressure(
     backend: Literal["python", "numba"] = "python",
     residual_check_interval: int = 1,
     coefficients: PoissonCoefficients | None = None,
+    omega: float = 1.0,
 ) -> GaussSeidelResult:
     """Resolve A p = -(rho/dt) D_h(u_f*), com A = -D_h G_h.
 
@@ -166,6 +167,7 @@ def solve_projection_pressure(
         initial_phi=initial_pressure,
         backend=backend,
         residual_check_interval=residual_check_interval,
+        omega=omega,
     )
 
     if not result.converged:

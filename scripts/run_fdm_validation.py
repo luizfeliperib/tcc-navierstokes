@@ -306,6 +306,13 @@ def build_parser():
         default="numba",
     )
 
+    parser.add_argument(
+        "--omega",
+        type=float,
+        default=1.0,
+        help=("Fator de relaxação do Poisson: 1.0=Gauss-Seidel; 0<omega<2=SOR."),
+    )
+
     # --------------------------------------------------
     # 4. Registro e exportação
     # --------------------------------------------------
@@ -361,6 +368,7 @@ def main():
         "stop_on_steady": args.stop_on_steady,
         "steady_consecutive_steps": (args.steady_consecutive_steps),
         "min_steps": args.min_steps,
+        "omega": args.omega,
     }
 
     print(
@@ -399,6 +407,7 @@ def main():
         steady_consecutive_steps=(args.steady_consecutive_steps),
         min_steps=args.min_steps,
         record_interval=args.record_interval,
+        omega=args.omega,
     )
 
     elapsed = perf_counter() - start

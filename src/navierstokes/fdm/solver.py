@@ -78,6 +78,7 @@ def solve(
     min_steps: int = 100,
     record_interval: int = 10,
     residual_check_interval: int = 1,
+    omega: float = 1.0,
 ) -> SimulationResult:
     """Executa a simulacao com passo temporal constante.
 
@@ -113,6 +114,17 @@ def solve(
     if backend not in ("python", "numba"):
         raise ValueError("backend invalido")
 
+    if (
+        isinstance(omega, (bool, np.bool_))
+        or not isinstance(
+            omega,
+            (int, float, np.integer, np.floating),
+        )
+        or not np.isfinite(omega)
+        or not (0.0 < omega < 2.0)
+    ):
+        raise ValueError("omega deve satisfazer 0 < omega < 2")
+
     grid = create_grid(config)
     state = initialize_state(grid)
 
@@ -137,6 +149,7 @@ def solve(
             backend=backend,
             residual_check_interval=residual_check_interval,
             coefficients=coefficients,
+            omega=omega,
         )
 
         state = step_result.state

@@ -31,6 +31,7 @@ def solve_poisson_gauss_seidel(
     compatibility_tolerance: float = 1e-10,
     backend: Literal["python", "numba"] = "python",
     residual_check_interval: int = 1,
+    omega: float = 1.0,
 ) -> GaussSeidelResult:
     """Resolve A phi = rhs usando Gauss-Seidel lexicografico.
 
@@ -87,6 +88,18 @@ def solve_poisson_gauss_seidel(
         or residual_check_interval < 1
     ):
         raise ValueError("residual_check_interval deve ser inteiro positivo")
+
+    if (
+        isinstance(omega, (bool, np.bool_))
+        or not np.isscalar(omega)
+        or not isinstance(
+            omega,
+            (int, float, np.integer, np.floating),
+        )
+        or not np.isfinite(omega)
+        or not (0.0 < omega < 2.0)
+    ):
+        raise ValueError("omega deve ser um número finito no intervalo 0 < omega < 2")
 
     if backend not in ("python", "numba"):
         raise ValueError("backend deve ser 'python' ou 'numba'")
@@ -238,7 +251,7 @@ def solve_poisson_gauss_seidel(
         max_iterations + 1,
     ):
         # ----------------------------------------------------
-        # 9.1. VARREDURA GAUSS-SEIDEL
+        # 9.1. VARREDURA GAUSS-SEIDEL / SOR
         # ----------------------------------------------------
 
         if backend == "numba":
@@ -250,6 +263,7 @@ def solve_poisson_gauss_seidel(
                 coefficients.west,
                 coefficients.north,
                 coefficients.south,
+                omega,
             )
 
         else:
@@ -269,7 +283,11 @@ def solve_poisson_gauss_seidel(
                     if j > 0:
                         neighbor_sum += coefficients.south[j, i] * phi[j - 1, i]
 
-                    phi[j, i] = (rhs[j, i] + neighbor_sum) / coefficients.center[j, i]
+                    old_phi = phi[j, i]
+
+                    gs_value = (rhs[j, i] + neighbor_sum) / coefficients.center[j, i]
+
+                    phi[j, i] = old_phi + omega * (gs_value - old_phi)
 
         # ----------------------------------------------------
         # 9.2. NORMALIZACAO DA PRESSAO

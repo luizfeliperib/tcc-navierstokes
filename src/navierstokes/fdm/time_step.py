@@ -51,6 +51,7 @@ def advance_one_step(
     backend: Literal["python", "numba"] = "python",
     residual_check_interval: int = 1,
     coefficients: PoissonCoefficients | None = None,
+    omega: float = 1.0,
 ) -> TimeStepResult:
     """Executa um passo completo do método de projeção.
 
@@ -102,6 +103,7 @@ def advance_one_step(
         backend=backend,
         residual_check_interval=residual_check_interval,
         coefficients=coefficients,
+        omega=omega,
     )
 
     pressure = pressure_result.phi
