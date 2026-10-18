@@ -12,7 +12,10 @@ from navierstokes.fdm.gauss_seidel import (
 )
 from navierstokes.fdm.grid import CartesianGrid
 from navierstokes.fdm.operators import divergence_faces, gradient_faces
-from navierstokes.fdm.poisson import assemble_poisson_coefficients
+from navierstokes.fdm.poisson import (
+    PoissonCoefficients,
+    assemble_poisson_coefficients,
+)
 from navierstokes.fdm.predictor import _check_field
 
 
@@ -122,6 +125,9 @@ def solve_projection_pressure(
     max_iterations: int = 10_000,
     initial_pressure: NDArray | None = None,
     backend: Literal["python", "numba"] = "python",
+    residual_check_interval: int = 1,
+    coefficients: PoissonCoefficients | None = None,
+    omega: float = 1.0,
 ) -> GaussSeidelResult:
     """Resolve A p = -(rho/dt) D_h(u_f*), com A = -D_h G_h.
 
@@ -148,7 +154,10 @@ def solve_projection_pressure(
     if not np.all(np.isfinite(rhs)):
         raise ValueError("Termo-fonte de pressão não finito")
 
-    coefficients = assemble_poisson_coefficients(grid)
+    if coefficients is None:
+        coefficients = assemble_poisson_coefficients(grid)
+    elif coefficients.center.shape != grid.scalar_shape:
+        raise ValueError("Coeficientes incompatíveis com a malha")
 
     result = solve_poisson_gauss_seidel(
         rhs,
@@ -157,6 +166,8 @@ def solve_projection_pressure(
         max_iterations=max_iterations,
         initial_phi=initial_pressure,
         backend=backend,
+        residual_check_interval=residual_check_interval,
+        omega=omega,
     )
 
     if not result.converged:
@@ -216,3 +227,19 @@ def predict_face_fluxes(
     v_faces_star[-1, :] = 0.0
 
     return u_faces_star, v_faces_star
+
+
+def reconstruct_predicted_face_fluxes(
+    u_star: NDArray,
+    v_star: NDArray,
+    grid: CartesianGrid,
+) -> tuple[NDArray, NDArray]:
+    """Reconstrói os fluxos provisórios das velocidades preditas.
+
+    Variante experimental de acoplamento para malha colocada.
+    Impõe fluxo normal nulo nas paredes da cavidade.
+    """
+    _check_field(u_star, grid.scalar_shape, "u_star")
+    _check_field(v_star, grid.scalar_shape, "v_star")
+
+    return interpolate_impermeable_faces(u_star, v_star, grid)

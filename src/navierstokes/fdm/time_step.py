@@ -8,6 +8,7 @@ from numpy.typing import NDArray
 from navierstokes.config import SimulationConfig
 from navierstokes.fdm.gauss_seidel import GaussSeidelResult
 from navierstokes.fdm.grid import CartesianGrid
+from navierstokes.fdm.poisson import PoissonCoefficients
 from navierstokes.fdm.predictor import (
     _check_field,
     _check_geometry,
@@ -17,6 +18,7 @@ from navierstokes.fdm.projection import (
     correct_center_velocities,
     correct_face_fluxes,
     predict_face_fluxes,
+    reconstruct_predicted_face_fluxes,
     solve_projection_pressure,
 )
 
@@ -48,6 +50,10 @@ def advance_one_step(
     pressure_tolerance: float = 1e-8,
     pressure_max_iterations: int = 10_000,
     backend: Literal["python", "numba"] = "python",
+    face_flux_mode: Literal["incremental", "reconstructed"] = "incremental",
+    residual_check_interval: int = 1,
+    coefficients: PoissonCoefficients | None = None,
+    omega: float = 1.0,
 ) -> TimeStepResult:
     """Executa um passo completo do método de projeção.
 
@@ -55,6 +61,9 @@ def advance_one_step(
     Não modifica o estado recebido.
     """
     _check_geometry(grid, config)
+
+    if face_flux_mode not in ("incremental", "reconstructed"):
+        raise ValueError("face_flux_mode deve ser 'incremental' ou 'reconstructed'")
 
     for name, field, shape in (
         ("u", state.u, grid.scalar_shape),
@@ -75,16 +84,23 @@ def advance_one_step(
         config,
     )
 
-    # 2. Construção incremental dos fluxos provisórios.
-    uf_star, vf_star = predict_face_fluxes(
-        state.u,
-        state.v,
-        u_star,
-        v_star,
-        state.u_faces,
-        state.v_faces,
-        grid,
-    )
+    # 2. Construção dos fluxos provisórios.
+    if face_flux_mode == "incremental":
+        uf_star, vf_star = predict_face_fluxes(
+            state.u,
+            state.v,
+            u_star,
+            v_star,
+            state.u_faces,
+            state.v_faces,
+            grid,
+        )
+    else:
+        uf_star, vf_star = reconstruct_predicted_face_fluxes(
+            u_star,
+            v_star,
+            grid,
+        )
 
     # 3. Resolução da equação de Poisson.
     pressure_result = solve_projection_pressure(
@@ -97,6 +113,9 @@ def advance_one_step(
         max_iterations=pressure_max_iterations,
         initial_pressure=state.pressure,
         backend=backend,
+        residual_check_interval=residual_check_interval,
+        coefficients=coefficients,
+        omega=omega,
     )
 
     pressure = pressure_result.phi

@@ -25,3 +25,21 @@ results/raw/*
 
 # Local temporary files
 *.log
+
+# ==========================================================
+# TCC - Resultados de simulações FDM
+# ==========================================================
+
+# Ignora todo o conteúdo gerado pelas simulações.
+/results/
+
+# Ignora diretórios alternativos de saída.
+/outputs/
+
+# Arquivos temporários e logs de execução.
+*.log
+*.tmp
+
+# Cache de gráficos e testes.
+.matplotlib/
+.pytest_cache/

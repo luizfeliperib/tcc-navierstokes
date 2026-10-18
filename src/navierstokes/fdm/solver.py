@@ -11,6 +11,7 @@ from navierstokes.fdm.diagnostics import (
     calculate_diagnostics,
 )
 from navierstokes.fdm.grid import CartesianGrid, create_grid
+from navierstokes.fdm.poisson import assemble_poisson_coefficients
 from navierstokes.fdm.time_step import FlowState, advance_one_step
 
 
@@ -70,12 +71,15 @@ def solve(
     config: SimulationConfig,
     *,
     backend: Literal["python", "numba"] = "python",
+    face_flux_mode: Literal["incremental", "reconstructed"] = "incremental",
     pressure_tolerance: float = 1e-9,
     pressure_max_iterations: int = 10_000,
     stop_on_steady: bool = True,
     steady_consecutive_steps: int = 20,
     min_steps: int = 100,
     record_interval: int = 10,
+    residual_check_interval: int = 1,
+    omega: float = 1.0,
 ) -> SimulationResult:
     """Executa a simulacao com passo temporal constante.
 
@@ -111,8 +115,25 @@ def solve(
     if backend not in ("python", "numba"):
         raise ValueError("backend invalido")
 
+    if (
+        isinstance(omega, (bool, np.bool_))
+        or not isinstance(
+            omega,
+            (int, float, np.integer, np.floating),
+        )
+        or not np.isfinite(omega)
+        or not (0.0 < omega < 2.0)
+    ):
+        raise ValueError("omega deve satisfazer 0 < omega < 2")
+
+    if face_flux_mode not in ("incremental", "reconstructed"):
+        raise ValueError("face_flux_mode deve ser 'incremental' ou 'reconstructed'")
+
     grid = create_grid(config)
     state = initialize_state(grid)
+
+    # A matriz discreta permanece constante durante a simulação.
+    coefficients = assemble_poisson_coefficients(grid)
 
     history: list[SimulationRecord] = []
     consecutive = 0
@@ -130,6 +151,10 @@ def solve(
             pressure_tolerance=pressure_tolerance,
             pressure_max_iterations=pressure_max_iterations,
             backend=backend,
+            residual_check_interval=residual_check_interval,
+            coefficients=coefficients,
+            omega=omega,
+            face_flux_mode=face_flux_mode,
         )
 
         state = step_result.state
