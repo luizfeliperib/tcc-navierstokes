@@ -313,6 +313,13 @@ def build_parser():
         help=("Fator de relaxação do Poisson: 1.0=Gauss-Seidel; 0<omega<2=SOR."),
     )
 
+    parser.add_argument(
+        "--face-flux-mode",
+        choices=("incremental", "reconstructed"),
+        default="incremental",
+        help="Estratégia de construção dos fluxos provisórios.",
+    )
+
     # --------------------------------------------------
     # 4. Registro e exportação
     # --------------------------------------------------
@@ -369,6 +376,7 @@ def main():
         "steady_consecutive_steps": (args.steady_consecutive_steps),
         "min_steps": args.min_steps,
         "omega": args.omega,
+        "face_flux_mode": args.face_flux_mode,
     }
 
     print(
@@ -408,6 +416,7 @@ def main():
         min_steps=args.min_steps,
         record_interval=args.record_interval,
         omega=args.omega,
+        face_flux_mode=args.face_flux_mode,
     )
 
     elapsed = perf_counter() - start

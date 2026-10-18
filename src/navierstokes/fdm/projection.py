@@ -227,3 +227,19 @@ def predict_face_fluxes(
     v_faces_star[-1, :] = 0.0
 
     return u_faces_star, v_faces_star
+
+
+def reconstruct_predicted_face_fluxes(
+    u_star: NDArray,
+    v_star: NDArray,
+    grid: CartesianGrid,
+) -> tuple[NDArray, NDArray]:
+    """Reconstrói os fluxos provisórios das velocidades preditas.
+
+    Variante experimental de acoplamento para malha colocada.
+    Impõe fluxo normal nulo nas paredes da cavidade.
+    """
+    _check_field(u_star, grid.scalar_shape, "u_star")
+    _check_field(v_star, grid.scalar_shape, "v_star")
+
+    return interpolate_impermeable_faces(u_star, v_star, grid)
