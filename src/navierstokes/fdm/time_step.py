@@ -18,8 +18,8 @@ from navierstokes.fdm.projection import (
     correct_center_velocities,
     correct_face_fluxes,
     predict_face_fluxes,
-    solve_projection_pressure,
     reconstruct_predicted_face_fluxes,
+    solve_projection_pressure,
 )
 
 
@@ -50,9 +50,7 @@ def advance_one_step(
     pressure_tolerance: float = 1e-8,
     pressure_max_iterations: int = 10_000,
     backend: Literal["python", "numba"] = "python",
-    face_flux_mode: Literal[
-        "incremental", "reconstructed"
-    ] = "incremental",
+    face_flux_mode: Literal["incremental", "reconstructed"] = "incremental",
     residual_check_interval: int = 1,
     coefficients: PoissonCoefficients | None = None,
     omega: float = 1.0,
@@ -65,10 +63,7 @@ def advance_one_step(
     _check_geometry(grid, config)
 
     if face_flux_mode not in ("incremental", "reconstructed"):
-        raise ValueError(
-            "face_flux_mode deve ser 'incremental' ou 'reconstructed'"
-        )
-
+        raise ValueError("face_flux_mode deve ser 'incremental' ou 'reconstructed'")
 
     for name, field, shape in (
         ("u", state.u, grid.scalar_shape),
@@ -89,7 +84,6 @@ def advance_one_step(
         config,
     )
 
-    
     # 2. Construção dos fluxos provisórios.
     if face_flux_mode == "incremental":
         uf_star, vf_star = predict_face_fluxes(
@@ -107,7 +101,6 @@ def advance_one_step(
             v_star,
             grid,
         )
-
 
     # 3. Resolução da equação de Poisson.
     pressure_result = solve_projection_pressure(

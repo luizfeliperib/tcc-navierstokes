@@ -1,4 +1,3 @@
-
 """FDM-07.7 - Estudo de sensibilidade ao passo temporal.
 
 Compara simulacoes com diferentes dt e mesmo tempo fisico final.
@@ -18,15 +17,14 @@ Saidas:
 import argparse
 import csv
 import json
-from dataclasses import asdict
 from pathlib import Path
 from time import perf_counter
 
 import numpy as np
+from run_fdm_validation import export_results
 
 from navierstokes.config import SimulationConfig
 from navierstokes.fdm.solver import solve
-from run_fdm_validation import export_results
 
 
 def rms(values):
@@ -65,21 +63,15 @@ def build_parser():
         default=10.0,
     )
 
-    parser.add_argument("--backend", choices=("python", "numba"),
-                        default="numba")
+    parser.add_argument("--backend", choices=("python", "numba"), default="numba")
     parser.add_argument("--omega", type=float, default=1.9)
 
-    parser.add_argument("--pressure-tolerance", type=float,
-                        default=1e-9)
-    parser.add_argument("--pressure-max-iterations", type=int,
-                        default=20000)
-    parser.add_argument("--residual-check-interval", type=int,
-                        default=10)
+    parser.add_argument("--pressure-tolerance", type=float, default=1e-9)
+    parser.add_argument("--pressure-max-iterations", type=int, default=20000)
+    parser.add_argument("--residual-check-interval", type=int, default=10)
 
-    parser.add_argument("--steady-tolerance", type=float,
-                        default=1e-5)
-    parser.add_argument("--record-interval", type=int,
-                        default=100)
+    parser.add_argument("--steady-tolerance", type=float, default=1e-5)
+    parser.add_argument("--record-interval", type=int, default=100)
 
     parser.add_argument(
         "--output",
@@ -117,8 +109,7 @@ def run_case(label, dt, steps, args):
     output_dir = args.output / label
 
     print(
-        f"\n[{label}] dt={dt:g} | passos={steps} | "
-        f"T={dt * steps:g}",
+        f"\n[{label}] dt={dt:g} | passos={steps} | T={dt * steps:g}",
         flush=True,
     )
 
@@ -216,18 +207,10 @@ def compare_fields(reference, candidate, label, dt):
         "dt": dt,
         "u_rms_difference": rms(other.u - ref.u),
         "v_rms_difference": rms(other.v - ref.v),
-        "u_max_difference": float(
-            np.max(np.abs(other.u - ref.u))
-        ),
-        "v_max_difference": float(
-            np.max(np.abs(other.v - ref.v))
-        ),
-        "u_faces_rms_difference": rms(
-            other.u_faces - ref.u_faces
-        ),
-        "v_faces_rms_difference": rms(
-            other.v_faces - ref.v_faces
-        ),
+        "u_max_difference": float(np.max(np.abs(other.u - ref.u))),
+        "v_max_difference": float(np.max(np.abs(other.v - ref.v))),
+        "u_faces_rms_difference": rms(other.u_faces - ref.u_faces),
+        "v_faces_rms_difference": rms(other.v_faces - ref.v_faces),
     }
 
 
@@ -240,9 +223,7 @@ def main():
     if args.record_interval < 1:
         raise ValueError("record-interval deve ser positivo")
 
-    if not args.dts or any(
-        not np.isfinite(dt) or dt <= 0 for dt in args.dts
-    ):
+    if not args.dts or any(not np.isfinite(dt) or dt <= 0 for dt in args.dts):
         raise ValueError("Todos os dt devem ser positivos e finitos")
 
     dts = sorted(set(args.dts))
@@ -261,8 +242,7 @@ def main():
             atol=1e-12,
         ):
             raise ValueError(
-                f"T={args.final_time:g} nao e multiplo "
-                f"inteiro de dt={dt:g}"
+                f"T={args.final_time:g} nao e multiplo inteiro de dt={dt:g}"
             )
 
         cases.append((dt, steps))
@@ -283,9 +263,7 @@ def main():
     for index, (dt, steps) in enumerate(cases):
         label = f"case_{index + 1:02d}_dt_{dt:g}"
 
-        summary, result = run_case(
-            label, dt, steps, args
-        )
+        summary, result = run_case(label, dt, steps, args)
 
         summaries.append(summary)
 
@@ -300,9 +278,7 @@ def main():
         )
 
     # O menor dt e a referencia numérica do experimento.
-    reference_label = (
-        f"case_01_dt_{cases[0][0]:g}"
-    )
+    reference_label = f"case_01_dt_{cases[0][0]:g}"
 
     comparisons = []
 
@@ -331,10 +307,7 @@ def main():
                 list(comparisons[0].keys()),
             )
     else:
-        print(
-            "\nATENCAO: menor dt falhou. "
-            "Nao foi possivel comparar os campos."
-        )
+        print("\nATENCAO: menor dt falhou. Nao foi possivel comparar os campos.")
 
     metadata = {
         "study": "FDM-07.7 temporal sensitivity",
@@ -349,12 +322,8 @@ def main():
             "backend": args.backend,
             "omega": args.omega,
             "pressure_tolerance": args.pressure_tolerance,
-            "pressure_max_iterations": (
-                args.pressure_max_iterations
-            ),
-            "residual_check_interval": (
-                args.residual_check_interval
-            ),
+            "pressure_max_iterations": (args.pressure_max_iterations),
+            "residual_check_interval": (args.residual_check_interval),
         },
         "summary": summaries,
         "field_comparison": comparisons,

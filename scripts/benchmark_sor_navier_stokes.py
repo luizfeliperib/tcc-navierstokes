@@ -1,4 +1,3 @@
-
 """FDM-07.5.5: benchmark do SOR no solver Navier-Stokes."""
 
 import csv
@@ -7,12 +6,10 @@ from pathlib import Path
 from time import perf_counter
 
 import numpy as np
+from run_fdm_validation import export_results
 
 from navierstokes.config import SimulationConfig
 from navierstokes.fdm.solver import solve
-
-from run_fdm_validation import export_results
-
 
 OUTPUT = Path("results/fdm_0755_sor_navier_stokes")
 
@@ -78,20 +75,11 @@ def run_case(n, omega):
         settings=settings,
     )
 
-    iterations = [
-        record.poisson_iterations
-        for record in result.history
-    ]
+    iterations = [record.poisson_iterations for record in result.history]
 
-    poisson_residuals = [
-        record.poisson_residual
-        for record in result.history
-    ]
+    poisson_residuals = [record.poisson_residual for record in result.history]
 
-    divergence = [
-        record.diagnostics.divergence_rms
-        for record in result.history
-    ]
+    divergence = [record.diagnostics.divergence_rms for record in result.history]
 
     return {
         "mesh": f"{n}x{n}",
@@ -101,9 +89,7 @@ def run_case(n, omega):
         "elapsed_seconds": elapsed,
         "seconds_per_step": elapsed / result.steps,
         "poisson_iterations_total": sum(iterations),
-        "poisson_iterations_mean": float(
-            np.mean(iterations)
-        ),
+        "poisson_iterations_mean": float(np.mean(iterations)),
         "poisson_iterations_max": max(iterations),
         "poisson_residual_max": max(poisson_residuals),
         "divergence_rms_max": max(divergence),
@@ -115,14 +101,9 @@ def run_case(n, omega):
 def compare_fields(n, omega):
     """Compara um caso SOR com o Gauss-Seidel da mesma malha."""
 
-    reference = (
-        OUTPUT / f"mesh_{n}" / "omega_1.00" / "fields.npz"
-    )
+    reference = OUTPUT / f"mesh_{n}" / "omega_1.00" / "fields.npz"
 
-    candidate = (
-        OUTPUT / f"mesh_{n}" /
-        f"omega_{omega:.2f}" / "fields.npz"
-    )
+    candidate = OUTPUT / f"mesh_{n}" / f"omega_{omega:.2f}" / "fields.npz"
 
     comparison = {
         "mesh": f"{n}x{n}",
@@ -130,18 +111,12 @@ def compare_fields(n, omega):
     }
 
     with np.load(reference) as gs, np.load(candidate) as sor:
-        for field in (
-            "u", "v", "pressure", "u_faces", "v_faces"
-        ):
+        for field in ("u", "v", "pressure", "u_faces", "v_faces"):
             difference = sor[field] - gs[field]
 
-            comparison[f"{field}_max_abs_diff"] = float(
-                np.max(np.abs(difference))
-            )
+            comparison[f"{field}_max_abs_diff"] = float(np.max(np.abs(difference)))
 
-            comparison[f"{field}_rms_diff"] = float(
-                np.sqrt(np.mean(difference**2))
-            )
+            comparison[f"{field}_rms_diff"] = float(np.sqrt(np.mean(difference**2)))
 
     return comparison
 
@@ -194,14 +169,10 @@ def main():
     for n, omegas in CASES.items():
         for omega in omegas:
             if omega != 1.0:
-                comparisons.append(
-                    compare_fields(n, omega)
-                )
+                comparisons.append(compare_fields(n, omega))
 
     def write_csv(path, data):
-        with path.open(
-            "w", newline="", encoding="utf-8"
-        ) as file:
+        with path.open("w", newline="", encoding="utf-8") as file:
             writer = csv.DictWriter(
                 file,
                 fieldnames=list(data[0].keys()),
@@ -233,18 +204,12 @@ def main():
         "record_interval": 1,
         "stop_on_steady": False,
         "timing": (
-            "perf_counter around solve(); "
-            "Numba warmup excluded; "
-            "export excluded"
+            "perf_counter around solve(); Numba warmup excluded; export excluded"
         ),
     }
 
-    with (
-        OUTPUT / "benchmark_metadata.json"
-    ).open("w", encoding="utf-8") as file:
-        json.dump(
-            metadata, file, indent=2, ensure_ascii=False
-        )
+    with (OUTPUT / "benchmark_metadata.json").open("w", encoding="utf-8") as file:
+        json.dump(metadata, file, indent=2, ensure_ascii=False)
 
     print("\nBenchmark concluido.")
     print(f"Resultados em: {OUTPUT}")
@@ -252,19 +217,13 @@ def main():
     # Verificacoes minimas de integridade.
     for row in rows:
         if row["steps"] != STEPS:
-            raise SystemExit(
-                "Erro: numero de passos inesperado."
-            )
+            raise SystemExit("Erro: numero de passos inesperado.")
 
         if row["poisson_residual_max"] > PRESSURE_TOLERANCE:
-            raise SystemExit(
-                "Erro: tolerancia de Poisson nao atendida."
-            )
+            raise SystemExit("Erro: tolerancia de Poisson nao atendida.")
 
         if not np.isfinite(row["divergence_rms_max"]):
-            raise SystemExit(
-                "Erro: divergencia nao finita."
-            )
+            raise SystemExit("Erro: divergencia nao finita.")
 
 
 if __name__ == "__main__":

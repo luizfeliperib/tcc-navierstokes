@@ -1,4 +1,3 @@
-
 """Diagnostico do acoplamento entre velocidades centrais e fluxos nas faces.
 
 Executa o algoritmo FDM existente sem modificar o solver original.
@@ -116,7 +115,6 @@ def main():
     # ---------------------------------------------------------
 
     for step in range(1, args.steps + 1):
-
         previous = state
 
         # 2.1 Predicao das velocidades centrais
@@ -190,11 +188,7 @@ def main():
         # 3. DIAGNOSTICOS PERIODICOS
         # -----------------------------------------------------
 
-        should_record = (
-            step == 1
-            or step % args.record_every == 0
-            or step == args.steps
-        )
+        should_record = step == 1 or step % args.record_every == 0 or step == args.steps
 
         if not should_record:
             continue
@@ -246,15 +240,11 @@ def main():
         factor = config.dt / config.density
 
         identity_error_u = rms(
-            new_error_u
-            - old_error_u
-            - factor * (grad_interp_u - grad_face_u)
+            new_error_u - old_error_u - factor * (grad_interp_u - grad_face_u)
         )
 
         identity_error_v = rms(
-            new_error_v
-            - old_error_v
-            - factor * (grad_interp_v - grad_face_v)
+            new_error_v - old_error_v - factor * (grad_interp_v - grad_face_v)
         )
 
         # -----------------------------------------------------
@@ -283,10 +273,13 @@ def main():
         # 3.3 RESIDUO ESTACIONARIO
         # -----------------------------------------------------
 
-        steady_residual = max(
-            rms(u - previous.u),
-            rms(v - previous.v),
-        ) / config.dt
+        steady_residual = (
+            max(
+                rms(u - previous.u),
+                rms(v - previous.v),
+            )
+            / config.dt
+        )
 
         elapsed = perf_counter() - start_time
 
@@ -302,9 +295,7 @@ def main():
             "poisson_iterations": pressure_result.iterations,
             "poisson_residual": pressure_result.residual,
             "face_divergence_rms": rms(divergence_projected),
-            "interpolated_center_divergence_rms": rms(
-                divergence_interpolated
-            ),
+            "interpolated_center_divergence_rms": rms(divergence_interpolated),
             "center_face_u_rms": diagnostics.center_face_u_rms,
             "center_face_v_rms": diagnostics.center_face_v_rms,
             "face_minus_center_u_interior_rms": error_u_interior,
@@ -359,7 +350,6 @@ def main():
         newline="",
         encoding="utf-8",
     ) as file:
-
         writer = csv.DictWriter(
             file,
             fieldnames=list(history[0].keys()),

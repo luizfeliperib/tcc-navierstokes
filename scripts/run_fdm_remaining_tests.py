@@ -1,4 +1,3 @@
-
 import csv
 import json
 import subprocess
@@ -44,10 +43,7 @@ for indice, teste in enumerate(TESTES, start=1):
     dt = teste["dt"]
     steps = teste["steps"]
 
-    nome = (
-        f"cfg_{teste['id']}_re{re}_"
-        f"{n}x{n}_dt{dt:.4f}".replace(".", "")
-    )
+    nome = f"cfg_{teste['id']}_re{re}_{n}x{n}_dt{dt:.4f}".replace(".", "")
 
     pasta = OUTPUT_ROOT / nome
     log_path = OUTPUT_ROOT / f"{nome}.log"
@@ -55,8 +51,7 @@ for indice, teste in enumerate(TESTES, start=1):
 
     print(f"\n{'=' * 65}", flush=True)
     print(f"TESTE {indice}/{len(TESTES)}: {nome}", flush=True)
-    print(f"Re={re} | Malha={n}x{n} | dt={dt} | T={dt * steps:g}",
-          flush=True)
+    print(f"Re={re} | Malha={n}x{n} | dt={dt} | T={dt * steps:g}", flush=True)
     print(f"{'=' * 65}", flush=True)
 
     # Evita repetir execucoes ja exportadas.
@@ -80,12 +75,14 @@ for indice, teste in enumerate(TESTES, start=1):
 
             if valido:
                 print("Resultado existente compativel. Pulando.")
-                relatorio.append({
-                    "teste": nome,
-                    "status": "JA_EXISTE",
-                    "segundos": "",
-                    "detalhe": "Resultado previamente exportado",
-                })
+                relatorio.append(
+                    {
+                        "teste": nome,
+                        "status": "JA_EXISTE",
+                        "segundos": "",
+                        "detalhe": "Resultado previamente exportado",
+                    }
+                )
                 continue
         except (KeyError, ValueError, TypeError, OSError):
             pass
@@ -93,22 +90,38 @@ for indice, teste in enumerate(TESTES, start=1):
     comando = [
         sys.executable,
         str(RUNNER),
-        "--reynolds", str(re),
-        "--nx", str(n),
-        "--ny", str(n),
-        "--dt", str(dt),
-        "--steps", str(steps),
-        "--backend", "numba",
-        "--omega", "1.9",
-        "--pressure-tolerance", "1e-9",
-        "--pressure-max-iterations", "20000",
-        "--residual-check-interval", "10",
-        "--steady-tolerance", "1e-5",
-        "--steady-consecutive-steps", "20",
-        "--min-steps", "100",
-        "--record-interval", "100",
-        "--face-flux-mode", "reconstructed",
-        "--output", str(pasta),
+        "--reynolds",
+        str(re),
+        "--nx",
+        str(n),
+        "--ny",
+        str(n),
+        "--dt",
+        str(dt),
+        "--steps",
+        str(steps),
+        "--backend",
+        "numba",
+        "--omega",
+        "1.9",
+        "--pressure-tolerance",
+        "1e-9",
+        "--pressure-max-iterations",
+        "20000",
+        "--residual-check-interval",
+        "10",
+        "--steady-tolerance",
+        "1e-5",
+        "--steady-consecutive-steps",
+        "20",
+        "--min-steps",
+        "100",
+        "--record-interval",
+        "100",
+        "--face-flux-mode",
+        "reconstructed",
+        "--output",
+        str(pasta),
     ]
 
     inicio = time.perf_counter()
@@ -129,21 +142,22 @@ for indice, teste in enumerate(TESTES, start=1):
             status = "OK"
         else:
             detalhe = (
-                f"Codigo de saida: {processo.returncode}. "
-                f"Consulte {log_path.name}"
+                f"Codigo de saida: {processo.returncode}. Consulte {log_path.name}"
             )
 
-    except Exception as erro:
+    except OSError as erro: 
         detalhe = str(erro)
 
     duracao = time.perf_counter() - inicio
 
-    relatorio.append({
-        "teste": nome,
-        "status": status,
-        "segundos": round(duracao, 2),
-        "detalhe": detalhe,
-    })
+    relatorio.append(
+        {
+            "teste": nome,
+            "status": status,
+            "segundos": round(duracao, 2),
+            "detalhe": detalhe,
+        }
+    )
 
     print(f"Status: {status}", flush=True)
     print(f"Tempo computacional: {duracao:.2f} s", flush=True)

@@ -1,4 +1,3 @@
-
 """FDM-07.7.2: comparacao dos perfis centrais com Ghia (1982)."""
 
 import argparse
@@ -13,9 +12,7 @@ from navierstokes.validation.ghia_reference import ghia_re100
 
 
 def read_profile(path, coordinate, velocity):
-    data = np.genfromtxt(
-        path, delimiter=",", names=True, encoding="utf-8"
-    )
+    data = np.genfromtxt(path, delimiter=",", names=True, encoding="utf-8")
 
     x = np.atleast_1d(data[coordinate])
     v = np.atleast_1d(data[velocity])
@@ -27,24 +24,16 @@ def read_profile(path, coordinate, velocity):
 def read_case(folder):
     folder = Path(folder)
 
-    with (folder / "metadata.json").open(
-        encoding="utf-8"
-    ) as file:
+    with (folder / "metadata.json").open(encoding="utf-8") as file:
         metadata = json.load(file)
 
     config = metadata["configuration"]
 
     if not np.isclose(config["reynolds"], 100):
-        raise ValueError(
-            f"{folder}: a referencia selecionada exige Re=100"
-        )
+        raise ValueError(f"{folder}: a referencia selecionada exige Re=100")
 
-    yu, u = read_profile(
-        folder / "centerline_u.csv", "y", "u"
-    )
-    xv, v = read_profile(
-        folder / "centerline_v.csv", "x", "v"
-    )
+    yu, u = read_profile(folder / "centerline_u.csv", "y", "u")
+    xv, v = read_profile(folder / "centerline_v.csv", "x", "v")
 
     lx = config["lx"]
     ly = config["ly"]
@@ -99,12 +88,8 @@ def write_csv(path, rows, columns):
 def main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument(
-        "--inputs", nargs="+", type=Path, required=True
-    )
-    parser.add_argument(
-        "--labels", nargs="+", required=True
-    )
+    parser.add_argument("--inputs", nargs="+", type=Path, required=True)
+    parser.add_argument("--labels", nargs="+", required=True)
     parser.add_argument(
         "--output",
         type=Path,
@@ -120,8 +105,7 @@ def main():
 
     reference = ghia_re100()
     cases = [
-        (label, read_case(folder))
-        for label, folder in zip(args.labels, args.inputs)
+        (label, read_case(folder)) for label, folder in zip(args.labels, args.inputs)
     ]
 
     specifications = [
@@ -155,15 +139,21 @@ def main():
 
         if spec["name"] == "u":
             ax.scatter(
-                spec["ref_v"], spec["ref_x"],
-                marker="o", color="black",
-                label="Ghia et al. (1982)", zorder=5
+                spec["ref_v"],
+                spec["ref_x"],
+                marker="o",
+                color="black",
+                label="Ghia et al. (1982)",
+                zorder=5,
             )
         else:
             ax.scatter(
-                spec["ref_x"], spec["ref_v"],
-                marker="o", color="black",
-                label="Ghia et al. (1982)", zorder=5
+                spec["ref_x"],
+                spec["ref_v"],
+                marker="o",
+                color="black",
+                label="Ghia et al. (1982)",
+                zorder=5,
             )
 
         for label, case in cases:
@@ -180,60 +170,58 @@ def main():
             metadata = case["metadata"]
             result = metadata["result"]
 
-            summary.append({
-                "case": label,
-                "component": spec["name"],
-                "final_time": result["final_time"],
-                "converged": result["converged"],
-                "steady_residual": result["steady_residual"],
-                **metrics,
-            })
-
-            for x, ref_value, value, error in zip(
-                spec["ref_x"], spec["ref_v"],
-                predicted, errors
-            ):
-                point_rows.append({
+            summary.append(
+                {
                     "case": label,
                     "component": spec["name"],
-                    "coordinate": float(x),
-                    "ghia": float(ref_value),
-                    "fdm": float(value),
-                    "error": float(error),
-                    "abs_error": float(abs(error)),
-                })
+                    "final_time": result["final_time"],
+                    "converged": result["converged"],
+                    "steady_residual": result["steady_residual"],
+                    **metrics,
+                }
+            )
+
+            for x, ref_value, value, error in zip(
+                spec["ref_x"], spec["ref_v"], predicted, errors
+            ):
+                point_rows.append(
+                    {
+                        "case": label,
+                        "component": spec["name"],
+                        "coordinate": float(x),
+                        "ghia": float(ref_value),
+                        "fdm": float(value),
+                        "error": float(error),
+                        "abs_error": float(abs(error)),
+                    }
+                )
 
             if spec["name"] == "u":
-                ax.plot(
-                    velocities, coordinates,
-                    label=f"FDM {label}"
-                )
+                ax.plot(velocities, coordinates, label=f"FDM {label}")
             else:
-                ax.plot(
-                    coordinates, velocities,
-                    label=f"FDM {label}"
-                )
+                ax.plot(coordinates, velocities, label=f"FDM {label}")
 
         ax.set_xlabel(spec["xlabel"])
         ax.set_ylabel(spec["ylabel"])
-        ax.set_title(
-            f"Re = 100 | Perfil central {spec['name']}"
-        )
+        ax.set_title(f"Re = 100 | Perfil central {spec['name']}")
         ax.grid(True, alpha=0.3)
         ax.legend()
         fig.tight_layout()
-        fig.savefig(
-            args.output / spec["filename"], dpi=180
-        )
+        fig.savefig(args.output / spec["filename"], dpi=180)
         plt.close(fig)
 
     write_csv(
         args.output / "ghia_metrics.csv",
         summary,
         [
-            "case", "component", "final_time",
-            "converged", "steady_residual",
-            "rmse", "mae", "max_abs_error",
+            "case",
+            "component",
+            "final_time",
+            "converged",
+            "steady_residual",
+            "rmse",
+            "mae",
+            "max_abs_error",
         ],
     )
 
@@ -241,8 +229,13 @@ def main():
         args.output / "ghia_pointwise.csv",
         point_rows,
         [
-            "case", "component", "coordinate",
-            "ghia", "fdm", "error", "abs_error",
+            "case",
+            "component",
+            "coordinate",
+            "ghia",
+            "fdm",
+            "error",
+            "abs_error",
         ],
     )
 

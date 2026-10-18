@@ -1,4 +1,3 @@
-
 """Executa os sete casos pendentes de Re=200 com malhas menores que 96x96.
 
 Local no repositório: scripts/run_fdm_re200_lote.py
@@ -114,47 +113,63 @@ def main():
         log_path = OUTPUT_ROOT / f"{name}.log"
 
         print(
-            f"\n[{index}/{len(CASES)}] {name} | "
-            f"{steps} passos | T={FINAL_TIME:g}",
+            f"\n[{index}/{len(CASES)}] {name} | {steps} passos | T={FINAL_TIME:g}",
             flush=True,
         )
 
         if not args.force and existing_is_valid(folder, n, dt, steps):
             print("  Resultado compatível encontrado: ignorando.", flush=True)
-            report.append({
-                "caso": name,
-                "status": "JA_EXISTE",
-                "segundos": "",
-                "log": str(log_path),
-            })
+            report.append(
+                {
+                    "caso": name,
+                    "status": "JA_EXISTE",
+                    "segundos": "",
+                    "log": str(log_path),
+                }
+            )
             continue
 
         if folder.exists() and any(folder.iterdir()):
             print(
-                "  AVISO: pasta já contém arquivos; "
-                "serão atualizados pelo executor.",
+                "  AVISO: pasta já contém arquivos; serão atualizados pelo executor.",
                 flush=True,
             )
 
         command = [
             sys.executable,
             str(RUNNER),
-            "--reynolds", str(REYNOLDS),
-            "--nx", str(n),
-            "--ny", str(n),
-            "--dt", str(dt),
-            "--steps", str(steps),
-            "--backend", "numba",
-            "--omega", "1.9",
-            "--pressure-tolerance", "1e-9",
-            "--pressure-max-iterations", "20000",
-            "--residual-check-interval", "10",
-            "--steady-tolerance", "1e-5",
-            "--steady-consecutive-steps", "20",
-            "--min-steps", "100",
-            "--record-interval", "100",
-            "--face-flux-mode", "reconstructed",
-            "--output", str(folder),
+            "--reynolds",
+            str(REYNOLDS),
+            "--nx",
+            str(n),
+            "--ny",
+            str(n),
+            "--dt",
+            str(dt),
+            "--steps",
+            str(steps),
+            "--backend",
+            "numba",
+            "--omega",
+            "1.9",
+            "--pressure-tolerance",
+            "1e-9",
+            "--pressure-max-iterations",
+            "20000",
+            "--residual-check-interval",
+            "10",
+            "--steady-tolerance",
+            "1e-5",
+            "--steady-consecutive-steps",
+            "20",
+            "--min-steps",
+            "100",
+            "--record-interval",
+            "100",
+            "--face-flux-mode",
+            "reconstructed",
+            "--output",
+            str(folder),
         ]
 
         case_started = time.perf_counter()
@@ -171,40 +186,39 @@ def main():
 
             duration = time.perf_counter() - case_started
             valid = existing_is_valid(folder, n, dt, steps)
-            status = (
-                "OK"
-                if process.returncode == 0 and valid
-                else "FALHOU"
-            )
+            status = "OK" if process.returncode == 0 and valid else "FALHOU"
 
             print(
                 f"  {status} | {duration:.1f} s | log: {log_path}",
                 flush=True,
             )
 
-            report.append({
-                "caso": name,
-                "status": status,
-                "segundos": round(duration, 2),
-                "log": str(log_path),
-            })
+            report.append(
+                {
+                    "caso": name,
+                    "status": status,
+                    "segundos": round(duration, 2),
+                    "log": str(log_path),
+                }
+            )
 
             if status != "OK":
                 print(
-                    "  Interrompendo o lote para evitar "
-                    "resultados incompletos.",
+                    "  Interrompendo o lote para evitar resultados incompletos.",
                     flush=True,
                 )
                 break
 
         except (OSError, subprocess.SubprocessError) as exc:
             print(f"  FALHOU: {exc}", flush=True)
-            report.append({
-                "caso": name,
-                "status": "FALHOU",
-                "segundos": "",
-                "log": str(log_path),
-            })
+            report.append(
+                {
+                    "caso": name,
+                    "status": "FALHOU",
+                    "segundos": "",
+                    "log": str(log_path),
+                }
+            )
             break
 
     summary_path = OUTPUT_ROOT / "resumo_lote.csv"
@@ -223,15 +237,9 @@ def main():
         writer.writerows(report)
 
     print(f"\nResumo: {summary_path}")
-    print(
-        f"Tempo total: "
-        f"{(time.perf_counter() - started) / 60:.1f} min"
-    )
+    print(f"Tempo total: {(time.perf_counter() - started) / 60:.1f} min")
 
-    return (
-        1 if any(item["status"] == "FALHOU" for item in report)
-        else 0
-    )
+    return 1 if any(item["status"] == "FALHOU" for item in report) else 0
 
 
 if __name__ == "__main__":

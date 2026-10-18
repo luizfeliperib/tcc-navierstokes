@@ -1,4 +1,3 @@
-
 import numpy as np
 import pytest
 
@@ -25,13 +24,9 @@ def test_reconstruction_matches_interpolation():
     u_star = rng.normal(size=grid.scalar_shape)
     v_star = rng.normal(size=grid.scalar_shape)
 
-    expected_u, expected_v = interpolate_impermeable_faces(
-        u_star, v_star, grid
-    )
+    expected_u, expected_v = interpolate_impermeable_faces(u_star, v_star, grid)
 
-    actual_u, actual_v = reconstruct_predicted_face_fluxes(
-        u_star, v_star, grid
-    )
+    actual_u, actual_v = reconstruct_predicted_face_fluxes(u_star, v_star, grid)
 
     np.testing.assert_allclose(actual_u, expected_u)
     np.testing.assert_allclose(actual_v, expected_v)
@@ -42,9 +37,7 @@ def test_reconstruction_matches_interpolation():
     assert np.all(actual_v[-1, :] == 0.0)
 
 
-@pytest.mark.parametrize(
-    "mode", ["incremental", "reconstructed"]
-)
+@pytest.mark.parametrize("mode", ["incremental", "reconstructed"])
 def test_both_modes_conserve_mass(mode):
     config = SimulationConfig(
         reynolds=100,

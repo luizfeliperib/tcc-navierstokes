@@ -71,9 +71,7 @@ def solve(
     config: SimulationConfig,
     *,
     backend: Literal["python", "numba"] = "python",
-    face_flux_mode: Literal[
-        "incremental", "reconstructed"
-    ] = "incremental",
+    face_flux_mode: Literal["incremental", "reconstructed"] = "incremental",
     pressure_tolerance: float = 1e-9,
     pressure_max_iterations: int = 10_000,
     stop_on_steady: bool = True,
@@ -129,9 +127,7 @@ def solve(
         raise ValueError("omega deve satisfazer 0 < omega < 2")
 
     if face_flux_mode not in ("incremental", "reconstructed"):
-        raise ValueError(
-            "face_flux_mode deve ser 'incremental' ou 'reconstructed'"
-        )
+        raise ValueError("face_flux_mode deve ser 'incremental' ou 'reconstructed'")
 
     grid = create_grid(config)
     state = initialize_state(grid)
